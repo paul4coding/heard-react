@@ -352,3 +352,11 @@ html{scroll-behavior:smooth}
 /* Logo image */
 .logo-img{width:40px;height:40px;object-fit:contain;flex:none}
 .brand-panel .logo-img{width:46px;height:46px}
+
+/* Priority */
+.prio{font-weight:600;font-size:12.5px}
+.prio.low{color:var(--ink-3)}
+.prio.medium{color:var(--info)}
+.prio.high{color:var(--warn)}
+.prio.urgent{color:var(--bad)}
+.btn:disabled{opacity:.55;cursor:not-allowed}

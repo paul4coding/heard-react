@@ -1,6 +1,6 @@
 import Icon from './Icon.jsx';
 import Logo from './Logo.jsx';
-import { NAV, TITLES } from '../data.js';
+import { NAV, TITLES, ROLE_LABEL } from '../data.js';
 import { initials } from '../utils.js';
 
 export default function AppShell({ role, user, view, dark, onNav, onTheme, onLogout, children }) {
@@ -20,7 +20,7 @@ export default function AppShell({ role, user, view, dark, onNav, onTheme, onLog
         <div className="spacer" />
         <div className="me">
           <div className="avatar">{initials(user.name)}</div>
-          <div><div className="n">{user.name}</div><div className="r">{user.sub}</div></div>
+          <div><div className="n">{user.name}</div><div className="r">{ROLE_LABEL[role]}</div></div>
         </div>
       </aside>
       <main className="main">

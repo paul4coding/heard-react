@@ -2,52 +2,48 @@ import { useState } from 'react';
 import Icon from '../components/Icon.jsx';
 import { Pill, Mini } from '../components/Status.jsx';
 import { STAGES } from '../data.js';
-import { fromLabel } from '../utils.js';
 
 const HEADS = {
   student: ['Complaint', 'Category', 'Progress', 'Updated'],
-  admin: ['Complaint', 'Category', 'From', 'Status', 'Assigned to', 'Updated'],
-  head: ['Complaint', 'Category', 'From', 'Status', 'Updated'],
+  admin: ['Complaint', 'Category', 'From', 'Status', 'Priority', 'Assigned to', 'Updated'],
+  coordinator: ['Complaint', 'Category', 'From', 'Status', 'Priority', 'Updated'],
 };
 
-export default function ComplaintList({ complaints, role, studentName, onOpen }) {
+export const Priority = ({ value }) =>
+  value ? <span className={`prio ${value.toLowerCase()}`}>{value.charAt(0) + value.slice(1).toLowerCase()}</span> : <span style={{ color: 'var(--ink-3)' }}>None</span>;
+
+export default function ComplaintList({ complaints, role, loading, onOpen }) {
   const [filter, setFilter] = useState('all');
   const [q, setQ] = useState('');
 
   const needle = q.toLowerCase();
   const rows = complaints.filter(
     (c) => (filter === 'all' || c.stage === filter) &&
-      (!needle || c.title.toLowerCase().includes(needle) || c.id.toLowerCase().includes(needle))
+      (!needle || c.title.toLowerCase().includes(needle) || c.ref.toLowerCase().includes(needle))
   );
 
-  const cells = (c) => {
-    const from = fromLabel(c, role, studentName);
-    return (
-      <>
-        <td><span className="ref">{c.id}</span><span className="ttl">{c.title}</span></td>
-        <td className="muted">{c.cat}</td>
-        {role === 'student' && (
-          <td>
-            <Mini stage={c.stage} />
-            <span className="sr">{STAGES[c.stage]}</span>{' '}
-            <span style={{ fontSize: '12.5px', color: 'var(--ink-3)' }}>{STAGES[c.stage]}</span>
-          </td>
-        )}
-        {role !== 'student' && (
-          <td className="muted">
-            {c.anon ? <span className="anon"><Icon name="eyeoff" />{from}</span> : from}
-          </td>
-        )}
-        {role !== 'student' && <td><Pill stage={c.stage} /></td>}
-        {role === 'admin' && (
-          <td className="muted">
-            {c.assignee ? c.assignee : <span style={{ color: 'var(--bad)', fontWeight: 600 }}>Unassigned</span>}
-          </td>
-        )}
-        <td className="muted">{c.log[c.log.length - 1].when.split(',')[0]}</td>
-      </>
-    );
-  };
+  const cells = (c) => (
+    <>
+      <td><span className="ref">{c.ref}</span><span className="ttl">{c.title}</span></td>
+      <td className="muted">{c.cat}</td>
+      {role === 'student' && (
+        <td>
+          <Mini stage={c.stage} />
+          <span className="sr">{STAGES[c.stage]}</span>{' '}
+          <span style={{ fontSize: '12.5px', color: 'var(--ink-3)' }}>{STAGES[c.stage]}</span>
+        </td>
+      )}
+      {role !== 'student' && <td className="muted">{c.owner}</td>}
+      {role !== 'student' && <td><Pill stage={c.stage} /></td>}
+      {role !== 'student' && <td><Priority value={c.priority} /></td>}
+      {role === 'admin' && (
+        <td className="muted">
+          {c.assignee ? c.assignee : <span style={{ color: 'var(--bad)', fontWeight: 600 }}>Unassigned</span>}
+        </td>
+      )}
+      <td className="muted">{c.updated}</td>
+    </>
+  );
 
   return (
     <>
@@ -66,10 +62,12 @@ export default function ComplaintList({ complaints, role, studentName, onOpen })
         </div>
       </div>
       <div className="panel tablewrap">
-        {rows.length === 0 ? (
+        {loading ? (
+          <div className="empty"><b>Loading…</b></div>
+        ) : rows.length === 0 ? (
           <div className="empty">
             <b>No complaints match</b>Try a different search or{' '}
-            <button className="btn ghost" style={{ height: 'auto', padding: '0 4px', color: 'var(--brand)' }} onClick={() => setFilter('all')}>show all statuses</button>.
+            <button className="btn ghost" style={{ height: 'auto', padding: '0 4px', color: 'var(--brand)' }} onClick={() => { setFilter('all'); setQ(''); }}>show everything</button>.
           </div>
         ) : (
           <table>

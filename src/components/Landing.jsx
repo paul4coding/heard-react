@@ -4,19 +4,19 @@ import { Tracker } from './Status.jsx';
 
 const FEATURES = [
   ['bubble', 'One place for everything', 'Classroom, facilities, sanitation and admin issues all go through the same simple form.'],
-  ['eyeoff', 'Anonymous if you prefer', 'Hide your name from staff and still follow your complaint from your own dashboard.'],
-  ['chart', 'Clear status, always', 'Five visible stages from Submitted to Resolved, with a note at every change.'],
-  ['star', 'Rate the outcome', 'Once it is fixed, tell us if it really worked so nothing slips through.'],
+  ['users', 'The right person on it', 'Administrators assign every complaint to a coordinator who posts updates.'],
+  ['chart', 'Clear status, always', 'Five visible stages from Submitted to Closed, with a history of every change.'],
+  ['mail', 'Talk to the team', 'Exchange messages on your complaint until it is resolved and closed.'],
 ];
 
 const STEPS = [
-  ['Lodge it', 'Describe the problem and add photos or a short video.'],
-  ['We route it', 'An administrator reviews it and assigns the right department head.'],
+  ['Lodge it', 'Describe the problem and pick a category.'],
+  ['We route it', 'An administrator reviews it and assigns a coordinator.'],
   ['Follow along', 'Every update shows up on your dashboard.'],
-  ['Review the fix', 'Rate the result and close the loop.'],
+  ['Close the loop', 'Once resolved, the administrator closes the complaint.'],
 ];
 
-export default function Landing({ onSignIn, onSignUp, dark, onTheme }) {
+export default function Landing({ onSignIn, dark, onTheme }) {
   return (
     <div className="landing">
       <header className="l-nav">
@@ -30,7 +30,6 @@ export default function Landing({ onSignIn, onSignUp, dark, onTheme }) {
             <Icon name={dark ? 'sun' : 'moon'} />
           </button>
           <button className="btn" onClick={onSignIn}>Sign in</button>
-          <button className="btn primary l-hide-sm" onClick={onSignUp}>Create account</button>
         </div>
       </header>
 
@@ -40,7 +39,7 @@ export default function Landing({ onSignIn, onSignUp, dark, onTheme }) {
           <h1>Report it once. Watch it get fixed.</h1>
           <p className="l-lede">One place for every classroom, facilities and admin complaint on campus, with a clear status from the moment you send it.</p>
           <div className="l-cta">
-            <button className="btn primary lg" onClick={onSignUp}>Lodge a complaint</button>
+            <button className="btn primary lg" onClick={onSignIn}>Lodge a complaint</button>
             <button className="btn lg" onClick={onSignIn}>Sign in</button>
           </div>
         </div>
@@ -54,10 +53,10 @@ export default function Landing({ onSignIn, onSignUp, dark, onTheme }) {
 
       <section className="l-stats">
         <div className="panel strip">
-          <div className="stat"><b>1 day</b><span>Typical time to first review</span></div>
           <div className="stat"><b>5</b><span>Visible stages per complaint</span></div>
-          <div className="stat"><b>3</b><span>Roles: student, head, admin</span></div>
-          <div className="stat"><b>100%</b><span>Anonymous option</span></div>
+          <div className="stat"><b>3</b><span>Roles: student, coordinator, admin</span></div>
+          <div className="stat"><b>1</b><span>Reference per complaint</span></div>
+          <div className="stat"><b>24/7</b><span>Follow progress online</span></div>
         </div>
       </section>
 
@@ -86,11 +85,11 @@ export default function Landing({ onSignIn, onSignUp, dark, onTheme }) {
       <section className="l-section">
         <div className="panel welcome">
           <div><h2>Something wrong on campus?</h2><p>It takes a minute to lodge a complaint and you can follow it every step of the way.</p></div>
-          <button className="btn lg" onClick={onSignUp}>Get started</button>
+          <button className="btn lg" onClick={onSignIn}>Get started</button>
         </div>
       </section>
 
-      <footer className="l-foot"><Logo /><span>Design prototype. No data is stored.</span></footer>
+      <footer className="l-foot"><Logo /><span>Student complaint management</span></footer>
     </div>
   );
 }

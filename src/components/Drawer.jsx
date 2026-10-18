@@ -1,91 +1,138 @@
 import { useEffect, useRef, useState } from 'react';
 import Icon from './Icon.jsx';
 import { Pill, Tracker } from './Status.jsx';
-import { STAGES, HEADS } from '../data.js';
-import { fromLabel } from '../utils.js';
+import { Priority } from '../views/ComplaintList.jsx';
+import { STAGES, PRIORITIES } from '../data.js';
 
-function AdminForm({ c, onSave }) {
-  const self = c.assignee === 'Administrator';
-  const [route, setRoute] = useState(self ? 'self' : 'head');
-  const [head, setHead] = useState(c.assignee && !self ? c.assignee : HEADS[0]);
+// Transitions autorisées par le backend (indices de STAGES)
+const NEXT = { 0: [1], 1: [2], 2: [3], 3: [4, 2], 4: [] };
+const REOPEN = 'Reopen (back to In progress)';
+
+const statusLabel = (from, to) => (from === 3 && to === 2 ? REOPEN : STAGES[to]);
+
+function Note({ value, onChange, placeholder }) {
+  return (
+    <label className="field"><span className="l">Message</span>
+      <textarea className="input" style={{ minHeight: 90 }} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} />
+    </label>
+  );
+}
+
+function SaveButton({ busy, disabled, label = 'Save update', onClick }) {
+  return <button className="btn primary block" disabled={busy || disabled} onClick={onClick}>{busy ? 'Saving…' : label}</button>;
+}
+
+function StudentForm({ c, onAction }) {
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  if (c.stage === 4) return <div className="note-ok dsec"><Icon name="info" /><span>This complaint is closed.</span></div>;
+
+  const send = async () => {
+    setBusy(true);
+    const err = await onAction({ kind: 'comment', note: note.trim() });
+    setBusy(false);
+    if (!err) setNote('');
+  };
+
+  return (
+    <section className="panel pad dsec">
+      <h3>Send a message</h3>
+      <Note value={note} onChange={setNote} placeholder="Add details or ask for news." />
+      <SaveButton busy={busy} disabled={!note.trim()} label="Send message" onClick={send} />
+    </section>
+  );
+}
+
+function CoordinatorForm({ c, onAction }) {
+  const options = c.stage === 1 || c.stage === 2 ? NEXT[c.stage] : [];
   const [stage, setStage] = useState(c.stage);
   const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  if (c.stage === 4) return <div className="note-ok dsec"><Icon name="info" /><span>This complaint is closed.</span></div>;
+
+  const changed = stage !== c.stage;
+  const save = async () => {
+    setBusy(true);
+    await onAction({ kind: 'staff', stage: changed ? stage : null, note: note.trim() });
+    setBusy(false);
+  };
+
+  return (
+    <section className="panel pad dsec">
+      <h3>Post an update</h3>
+      {options.length > 0 && (
+        <label className="field"><span className="l">Status</span>
+          <select className="input" value={stage} onChange={(e) => setStage(+e.target.value)}>
+            <option value={c.stage}>{STAGES[c.stage]} (current)</option>
+            {options.map((i) => <option key={i} value={i}>{STAGES[i]}</option>)}
+          </select>
+        </label>
+      )}
+      <Note value={note} onChange={setNote} placeholder={stage === 3 ? 'Describe the resolution.' : 'What has been done and what happens next.'} />
+      <SaveButton busy={busy} disabled={!changed && !note.trim()} onClick={save} />
+    </section>
+  );
+}
+
+function AdminForm({ c, coordinators, onAction }) {
+  const canAssign = c.stage <= 2;
+  const options = c.stage === 0 ? [] : NEXT[c.stage];
+  const [coord, setCoord] = useState(c.assigneeId ?? '');
+  const [priority, setPriority] = useState(c.priority ?? '');
+  const [stage, setStage] = useState(c.stage);
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const assignChanged = canAssign && coord !== '' && (coord !== c.assigneeId || priority !== (c.priority ?? ''));
+  const priorityChanged = !canAssign && priority !== (c.priority ?? '') && priority !== '';
+  const statusChanged = stage !== c.stage;
+  const dirty = assignChanged || priorityChanged || statusChanged || note.trim();
+
+  const save = async () => {
+    setBusy(true);
+    await onAction({
+      kind: 'admin', assign: assignChanged ? { coordinatorId: +coord, priority: priority || null } : null,
+      priority: priorityChanged ? priority : null, stage: statusChanged ? stage : null, note: note.trim(),
+    });
+    setBusy(false);
+  };
+
+  if (c.stage === 4) return <div className="note-ok dsec"><Icon name="info" /><span>This complaint is closed.</span></div>;
 
   return (
     <section className="panel pad dsec">
       <h3>Handle this complaint</h3>
-      <div className="routes">
-        <label className="route">
-          <input type="radio" name="route" checked={route === 'head'} onChange={() => setRoute('head')} />
-          <span><b>Assign to a department head</b><small>It goes to their queue and they post updates.</small></span>
+      {canAssign && (
+        <label className="field"><span className="l">Coordinator</span>
+          <select className="input" value={coord} onChange={(e) => setCoord(e.target.value === '' ? '' : +e.target.value)}>
+            <option value="">Choose a coordinator</option>
+            {coordinators.map((u) => <option key={u.id} value={u.id}>{u.name}{u.department ? ` (${u.department})` : ''}</option>)}
+          </select>
+          {c.stage === 0 && <small>Assigning moves the complaint to Assigned.</small>}
         </label>
-        <label className="route">
-          <input type="radio" name="route" checked={route === 'self'} onChange={() => setRoute('self')} />
-          <span><b>Resolve it myself</b><small>You own this complaint until it is closed.</small></span>
-        </label>
-      </div>
-      {route === 'head' && (
-        <label className="field"><span className="l">Department head</span>
-          <select className="input" value={head} onChange={(e) => setHead(e.target.value)}>
-            {HEADS.map((h) => <option key={h}>{h}</option>)}
+      )}
+      <label className="field"><span className="l">Priority</span>
+        <select className="input" value={priority} onChange={(e) => setPriority(e.target.value)}>
+          <option value="">No priority</option>
+          {PRIORITIES.map((p) => <option key={p} value={p}>{p.charAt(0) + p.slice(1).toLowerCase()}</option>)}
+        </select>
+      </label>
+      {options.length > 0 && (
+        <label className="field"><span className="l">Status</span>
+          <select className="input" value={stage} onChange={(e) => setStage(+e.target.value)}>
+            <option value={c.stage}>{STAGES[c.stage]} (current)</option>
+            {options.map((i) => <option key={i} value={i}>{statusLabel(c.stage, i)}</option>)}
           </select>
         </label>
       )}
-      <label className="field"><span className="l">Status</span>
-        <select className="input" value={stage} onChange={(e) => setStage(+e.target.value)}>
-          {STAGES.map((s, i) => <option key={s} value={i}>{s}</option>)}
-        </select>
-      </label>
-      <label className="field"><span className="l">Note for the student</span>
-        <textarea className="input" style={{ minHeight: 90 }} placeholder="What is happening and what to expect next." value={note} onChange={(e) => setNote(e.target.value)} />
-      </label>
-      <button className="btn primary block" onClick={() => onSave({ kind: 'admin', route, head, stage, note: note.trim() })}>Save update</button>
+      <Note value={note} onChange={setNote} placeholder="What is happening and what to expect next." />
+      <SaveButton busy={busy} disabled={!dirty} onClick={save} />
     </section>
   );
 }
 
-function HeadForm({ c, onSave }) {
-  const [stage, setStage] = useState(c.stage);
-  const [note, setNote] = useState('');
-  return (
-    <section className="panel pad dsec">
-      <h3>Post an update</h3>
-      <label className="field"><span className="l">Status</span>
-        <select className="input" value={stage} onChange={(e) => setStage(+e.target.value)}>
-          {[2, 3, 4].map((i) => <option key={i} value={i}>{STAGES[i]}</option>)}
-        </select>
-      </label>
-      <label className="field"><span className="l">Note for the student</span>
-        <textarea className="input" style={{ minHeight: 90 }} placeholder="What has been done and what happens next." value={note} onChange={(e) => setNote(e.target.value)} />
-      </label>
-      <button className="btn primary block" onClick={() => onSave({ kind: 'head', stage, note: note.trim() })}>Save update</button>
-    </section>
-  );
-}
-
-function ReviewForm({ onSave, onError }) {
-  const [rating, setRating] = useState(0);
-  const [text, setText] = useState('');
-  return (
-    <section className="panel pad dsec">
-      <h3>Review the outcome</h3>
-      <p style={{ color: 'var(--ink-2)', marginBottom: 14 }}>Did this fix the problem?</p>
-      <div className="stars" role="group" aria-label="Rating">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button key={n} type="button" className={n <= rating ? 'on' : ''} aria-label={`${n} star${n > 1 ? 's' : ''}`} onClick={() => setRating(n)}>
-            <Icon name="star" />
-          </button>
-        ))}
-      </div>
-      <label className="field"><span className="l">Comments <span style={{ fontWeight: 400, color: 'var(--ink-3)' }}>(optional)</span></span>
-        <textarea className="input" style={{ minHeight: 90 }} placeholder="Tell us what worked or what was missed." value={text} onChange={(e) => setText(e.target.value)} />
-      </label>
-      <button className="btn primary block" onClick={() => (rating ? onSave({ kind: 'review', rating, review: text.trim() }) : onError('Choose a star rating first'))}>Submit review</button>
-    </section>
-  );
-}
-
-export default function Drawer({ complaint: c, role, studentName, open, onClose, onSave, onError }) {
+export default function Drawer({ complaint: c, role, coordinators, open, loading, onClose, onAction }) {
   const ref = useRef(null);
   const closeBtn = useRef(null);
 
@@ -107,22 +154,11 @@ export default function Drawer({ complaint: c, role, studentName, open, onClose,
   let body = null;
   if (c) {
     const isStudent = role === 'student';
+    const formKey = `${c.id}-${c.log.length}-${c.stage}-${c.assigneeId}-${c.priority}`;
     let action;
-    if (role === 'admin') action = <AdminForm key={`${c.id}-${c.log.length}`} c={c} onSave={onSave} />;
-    else if (role === 'head') action = <HeadForm key={`${c.id}-${c.log.length}`} c={c} onSave={onSave} />;
-    else if (c.stage === 4) {
-      action = c.rating ? (
-        <section className="panel pad dsec">
-          <h3>Your review</h3>
-          <div className="review-done" aria-label={`${c.rating} out of 5 stars`}>
-            {Array.from({ length: c.rating }, (_, i) => <Icon key={i} name="star" />)}
-          </div>
-          <p style={{ color: 'var(--ink-2)' }}>{c.review || ''}</p>
-        </section>
-      ) : <ReviewForm key={c.id} onSave={onSave} onError={onError} />;
-    } else {
-      action = <div className="note-ok dsec"><Icon name="info" /><span>We will update this page as soon as the status changes.</span></div>;
-    }
+    if (role === 'admin') action = <AdminForm key={formKey} c={c} coordinators={coordinators} onAction={onAction} />;
+    else if (role === 'coordinator') action = <CoordinatorForm key={formKey} c={c} onAction={onAction} />;
+    else action = <StudentForm key={formKey} c={c} onAction={onAction} />;
 
     body = (
       <>
@@ -131,30 +167,19 @@ export default function Drawer({ complaint: c, role, studentName, open, onClose,
         <div className="dsec"><Tracker stage={c.stage} /></div>
         <dl className="panel meta">
           <div><dt>Category</dt><dd>{c.cat}</dd></div>
-          <div><dt>Department</dt><dd>{c.dept}</dd></div>
+          <div><dt>Priority</dt><dd><Priority value={c.priority} /></dd></div>
           <div><dt>Submitted</dt><dd>{c.date}</dd></div>
           <div>
             <dt>{isStudent ? 'Handled by' : 'From'}</dt>
-            <dd>{isStudent ? (c.assignee || 'Not assigned yet') : (c.anon ? 'Anonymous' : fromLabel(c, role, studentName))}</dd>
+            <dd>{isStudent ? (c.assignee || 'Not assigned yet') : c.owner}</dd>
           </div>
+          {!isStudent && <div><dt>Assigned to</dt><dd>{c.assignee || 'Unassigned'}</dd></div>}
         </dl>
-        {c.anon && !isStudent && (
-          <div className="note-ok dsec"><Icon name="eyeoff" /><span>This student chose to stay anonymous. Any note you post will reach them on their dashboard.</span></div>
-        )}
         <div className="dsec"><h3>Description</h3><p>{c.desc}</p></div>
-        {c.media.length > 0 && (
-          <div className="dsec">
-            <h3>Attachments</h3>
-            <div className="media">
-              {c.media.map((m) => (
-                <div className="m" key={m.n}><div className={`th ${m.t}`}><Icon name={m.t} /></div><span>{m.n}</span></div>
-              ))}
-            </div>
-          </div>
-        )}
         {action}
         <div className="dsec">
           <h3>Updates</h3>
+          {loading && <p style={{ color: 'var(--ink-3)' }}>Loading…</p>}
           <ul className="log">
             {[...c.log].reverse().map((l, i) => (
               <li key={i}><b>{l.st}</b><span>{l.when}</span><p>{l.note}</p></li>
@@ -170,7 +195,7 @@ export default function Drawer({ complaint: c, role, studentName, open, onClose,
       {open && <div className="scrim open" onClick={onClose} />}
       <aside ref={ref} className={`drawer${open ? ' open' : ''}`} role="dialog" aria-modal="true" aria-label="Complaint details" aria-hidden={!open}>
         <div className="dr-top">
-          <span className="ref">{c?.id}</span>
+          <span className="ref">{c?.ref}</span>
           <button ref={closeBtn} className="icon-btn" onClick={onClose} aria-label="Close details"><Icon name="x" /></button>
         </div>
         {body}
