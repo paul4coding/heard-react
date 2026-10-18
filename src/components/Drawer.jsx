@@ -85,7 +85,8 @@ function AdminForm({ c, coordinators, onAction }) {
   const [busy, setBusy] = useState(false);
 
   const assignChanged = canAssign && coord !== '' && (coord !== c.assigneeId || priority !== (c.priority ?? ''));
-  const priorityChanged = !canAssign && priority !== (c.priority ?? '') && priority !== '';
+  // Priorité seule : plainte non assignable (résolue) ou aucun coordinateur choisi
+  const priorityChanged = !assignChanged && priority !== (c.priority ?? '') && priority !== '';
   const statusChanged = stage !== c.stage;
   const dirty = assignChanged || priorityChanged || statusChanged || note.trim();
 

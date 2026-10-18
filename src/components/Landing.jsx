@@ -44,9 +44,9 @@ export default function Landing({ onSignIn, dark, onTheme }) {
           </div>
         </div>
         <div className="panel l-card" aria-hidden="true">
-          <div className="hd"><span>CMP-1048</span><span className="pill s3">In progress</span></div>
+          <div className="hd"><span>CMP-2026-0048</span><span className="pill s2">In progress</span></div>
           <h3>Projector in Room B204 keeps flickering</h3>
-          <Tracker stage={3} />
+          <Tracker stage={2} />
           <p className="l-note"><b>Dr. Naidoo:</b> A replacement lamp is on order. Technicians will fit it on Thursday.</p>
         </div>
       </section>

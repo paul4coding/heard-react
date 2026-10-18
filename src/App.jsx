@@ -132,6 +132,9 @@ export default function App() {
     setLastNew(null);
     close();
     window.scrollTo(0, 0);
+    // Rafraîchissement silencieux : d'autres utilisateurs ont pu modifier des plaintes
+    api.listComplaints(role).then(setComplaints).catch(fail);
+    if (role === 'admin') api.getStats().then(setStats).catch(() => {});
   };
 
   const create = async (data) => {
@@ -156,25 +159,23 @@ export default function App() {
       } else {
         if (a.assign) c = await api.assign(id, a.assign.coordinatorId, a.assign.priority);
         else if (a.priority) c = await api.setPriority(id, a.priority);
-        let noteSent = false;
-        if (a.stage != null) {
-          if (a.stage === 3 && a.note) {
-            c = await api.addComment(role, id, a.note, true); // la résolution passe la plainte en RESOLVED
-            noteSent = true;
-          } else {
-            c = await api.setStatus(role, id, STATUSES[a.stage]);
-          }
+        if (a.stage === 3 && a.note) {
+          c = await api.addComment(role, id, a.note, true); // la résolution passe la plainte en RESOLVED
+        } else {
+          // Le backend refuse les messages sur une plainte clôturée : on poste donc la note avant le changement de statut
+          if (a.note) c = await api.addComment(role, id, a.note);
+          if (a.stage != null) c = await api.setStatus(role, id, STATUSES[a.stage]);
         }
-        if (a.note && !noteSent) c = await api.addComment(role, id, a.note);
       }
       if (c) replace(c);
-      if (role === 'admin') api.getStats().then(setStats).catch(() => {});
       notify(a.kind === 'comment' ? 'Message sent' : 'Update saved');
       return null;
     } catch (e) {
       // Une étape a pu réussir avant l'échec : on resynchronise la plainte
       api.getComplaint(role, id).then(replace).catch(() => {});
       return fail(e);
+    } finally {
+      if (role === 'admin') api.getStats().then(setStats).catch(() => {});
     }
   };
 
@@ -182,10 +183,16 @@ export default function App() {
 
   const toggleTheme = () => setTheme(dark ? 'light' : 'dark');
 
-  if (!user && screen === 'landing') {
-    return <Landing dark={dark} onTheme={toggleTheme} onSignIn={() => { setScreen('auth'); window.scrollTo(0, 0); }} />;
+  if (!user) {
+    return (
+      <>
+        {screen === 'landing'
+          ? <Landing dark={dark} onTheme={toggleTheme} onSignIn={() => { setScreen('auth'); window.scrollTo(0, 0); }} />
+          : <AuthPage onLogin={login} onBack={() => setScreen('landing')} />}
+        <Toast toast={toast} />
+      </>
+    );
   }
-  if (!user) return <AuthPage onLogin={login} onBack={() => setScreen('landing')} />;
 
   const props = { complaints, onOpen: open };
   let content;

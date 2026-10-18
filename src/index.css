@@ -287,7 +287,7 @@ td.muted{color:var(--ink-2)}
   .auth{grid-template-columns:1fr}
   .brand-panel{display:none}
   .auth-box .logo{display:flex}
-  .app{grid-template-columns:1fr}
+  .app{grid-template-columns:minmax(0,1fr)}
   .side{position:static;height:auto;flex-direction:row;align-items:center;gap:10px;padding:12px 14px;border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}
   .side .logo span.w{display:none}
   .nav{flex-direction:row}
