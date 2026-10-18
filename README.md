@@ -1,6 +1,6 @@
 # Heard — Student Complaint Management (frontend)
 
-React + Vite single-page app for lodging and following student complaints. It talks to the FastAPI backend (**complaints backend**: JWT auth, role-based API, PostgreSQL).
+React + Vite single-page app for lodging and following student complaints. It talks to the FastAPI backend, [Joycodewad/complaints_backend](https://github.com/Joycodewad/complaints_backend) (JWT auth, role-based API, PostgreSQL).
 
 **Heard** gives every complaint a clear status from the moment it is sent:
 `Submitted → Assigned → In progress → Resolved → Closed`.
