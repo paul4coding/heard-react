@@ -11,19 +11,19 @@ import { STATUSES } from './data.js';
 import * as api from './api.js';
 
 const systemDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
+const OVERVIEW_ITEMS = 50; // plaintes récentes affichées dans les aperçus (les compteurs, eux, sont exacts)
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [booting, setBooting] = useState(!!api.getToken());
-  const [complaints, setComplaints] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState(null);
+  const [overview, setOverview] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0); // incrémenté après chaque modification : les listes se rechargent
   const [categories, setCategories] = useState([]);
   const [coordinators, setCoordinators] = useState([]);
   const [view, setView] = useState('overview');
   const [lastNew, setLastNew] = useState(null);
-  const [openId, setOpenId] = useState(null);
-  const [shownId, setShownId] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [open, setOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [theme, setTheme] = useState(null);
   const [toast, setToast] = useState(null);
@@ -43,14 +43,14 @@ export default function App() {
     toastTimer.current = setTimeout(() => setToast(null), 3200);
   }, []);
 
-  const close = useCallback(() => setOpenId(null), []);
+  const close = useCallback(() => setOpen(false), []);
 
   const logout = useCallback(() => {
     api.setToken(null);
     setUser(null);
-    setComplaints([]);
-    setStats(null);
-    setOpenId(null);
+    setOverview(null);
+    setOpen(false);
+    setSelected(null);
     setLastNew(null);
     setView('overview');
     setScreen('landing');
@@ -68,20 +68,33 @@ export default function App() {
     return e.message;
   }, [logout, notify]);
 
-  const loadData = useCallback(async (u) => {
-    setLoading(true);
+  // Données de l'aperçu : compteurs exacts + quelques plaintes récentes (jamais toute la base)
+  const loadOverview = useCallback(async (u) => {
     try {
-      const jobs = [api.listComplaints(u.role).then(setComplaints)];
-      if (u.role === 'student') jobs.push(api.listCategories().then(setCategories));
       if (u.role === 'admin') {
-        jobs.push(api.getStats().then(setStats));
-        jobs.push(api.listCoordinators().then((rows) => setCoordinators(rows.map(api.toUser))));
+        const [stats, unassigned] = await Promise.all([
+          api.getStats(),
+          api.listComplaints('admin', { unassigned: true, limit: 20 }),
+        ]);
+        setOverview({ stats, unassigned });
+      } else {
+        const [stats, { items }] = await Promise.all([
+          api.getMyStats(u.role),
+          api.listComplaints(u.role, { limit: OVERVIEW_ITEMS }),
+        ]);
+        setOverview({ stats, items });
       }
-      await Promise.all(jobs);
     } catch (e) {
       fail(e);
-    } finally {
-      setLoading(false);
+    }
+  }, [fail]);
+
+  const loadStatic = useCallback(async (u) => {
+    try {
+      if (u.role === 'student') setCategories(await api.listCategories());
+      if (u.role === 'admin') setCoordinators((await api.listCoordinators()).map(api.toUser));
+    } catch (e) {
+      fail(e);
     }
   }, [fail]);
 
@@ -89,10 +102,10 @@ export default function App() {
   useEffect(() => {
     if (!api.getToken()) return;
     api.me()
-      .then((u) => { setUser(u); loadData(u); })
+      .then((u) => { setUser(u); loadOverview(u); loadStatic(u); })
       .catch(() => api.setToken(null))
       .finally(() => setBooting(false));
-  }, [loadData]);
+  }, [loadOverview, loadStatic]);
 
   const login = async (username, password) => {
     try {
@@ -100,26 +113,33 @@ export default function App() {
       setUser(u);
       setView('overview');
       setLastNew(null);
+      setOverview(null);
       window.scrollTo(0, 0);
-      loadData(u);
+      loadOverview(u);
+      loadStatic(u);
       return null;
     } catch (e) {
       return e.status === 401 ? 'Incorrect username or password.' : e.message;
     }
   };
 
-  const replace = (c) => setComplaints((list) => (list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [c, ...list]));
+  const refreshAll = () => {
+    setRefreshKey((k) => k + 1);
+    loadOverview(user);
+  };
 
-  const open = async (id) => {
+  // Ouvre le tiroir tout de suite avec la ligne déjà connue, puis charge le détail (messages, historique)
+  const openComplaint = async (c) => {
     if (role === 'student' && view === 'new' && lastNew) {
       setLastNew(null);
       setView('mine');
     }
-    setShownId(id);
-    setOpenId(id);
+    setSelected(c);
+    setOpen(true);
     setDetailLoading(true);
     try {
-      replace(await api.getComplaint(role, id));
+      const full = await api.getComplaint(role, c.id);
+      setSelected((cur) => (cur && cur.id === c.id ? full : cur));
     } catch (e) {
       fail(e);
     } finally {
@@ -132,16 +152,14 @@ export default function App() {
     setLastNew(null);
     close();
     window.scrollTo(0, 0);
-    // Rafraîchissement silencieux : d'autres utilisateurs ont pu modifier des plaintes
-    api.listComplaints(role).then(setComplaints).catch(fail);
-    if (role === 'admin') api.getStats().then(setStats).catch(() => {});
+    refreshAll(); // d'autres utilisateurs ont pu modifier des plaintes
   };
 
   const create = async (data) => {
     try {
       const c = await api.createComplaint(data);
-      replace(c);
       setLastNew(c);
+      refreshAll();
       window.scrollTo(0, 0);
       return null;
     } catch (e) {
@@ -149,9 +167,10 @@ export default function App() {
     }
   };
 
-  // Applique une action du tiroir, dans l'ordre : affectation/priorité -> statut -> message
+  // Applique une action du tiroir, dans l'ordre : affectation/priorité -> message -> statut
   const act = async (a) => {
-    const id = openId;
+    const id = selected.id;
+    const keep = (c) => setSelected((cur) => (cur && cur.id === id ? c : cur));
     try {
       let c = null;
       if (a.kind === 'comment') {
@@ -167,15 +186,15 @@ export default function App() {
           if (a.stage != null) c = await api.setStatus(role, id, STATUSES[a.stage]);
         }
       }
-      if (c) replace(c);
+      if (c) keep(c);
       notify(a.kind === 'comment' ? 'Message sent' : 'Update saved');
       return null;
     } catch (e) {
       // Une étape a pu réussir avant l'échec : on resynchronise la plainte
-      api.getComplaint(role, id).then(replace).catch(() => {});
+      api.getComplaint(role, id).then(keep).catch(() => {});
       return fail(e);
     } finally {
-      if (role === 'admin') api.getStats().then(setStats).catch(() => {});
+      refreshAll();
     }
   };
 
@@ -194,7 +213,8 @@ export default function App() {
     );
   }
 
-  const props = { complaints, onOpen: open };
+  const listView = role === 'admin' ? 'all' : role === 'coordinator' ? 'queue' : 'mine';
+  const props = { data: overview, onOpen: openComplaint, onAll: () => nav(listView) };
   let content;
   switch (`${role}.${view}`) {
     case 'student.overview':
@@ -202,17 +222,17 @@ export default function App() {
       break;
     case 'student.new':
       content = lastNew
-        ? <ComplaintSuccess complaint={lastNew} onView={open} onAgain={() => setLastNew(null)} />
+        ? <ComplaintSuccess complaint={lastNew} onView={openComplaint} onAgain={() => setLastNew(null)} />
         : <NewComplaint categories={categories} onSubmit={create} />;
       break;
     case 'admin.overview':
-      content = <AdminOverview {...props} stats={stats} />;
+      content = <AdminOverview {...props} />;
       break;
     case 'coordinator.overview':
       content = <CoordinatorOverview {...props} />;
       break;
     default:
-      content = <ComplaintList key={`${role}.${view}`} complaints={complaints} role={role} loading={loading} onOpen={open} />;
+      content = <ComplaintList key={`${role}.${view}`} role={role} refreshKey={refreshKey} onOpen={openComplaint} onError={fail} />;
   }
 
   return (
@@ -221,9 +241,9 @@ export default function App() {
         {content}
       </AppShell>
       <Drawer
-        complaint={complaints.find((c) => c.id === shownId)}
+        complaint={selected}
         role={role} coordinators={coordinators} loading={detailLoading}
-        open={openId !== null} onClose={close} onAction={act}
+        open={open} onClose={close} onAction={act}
       />
       <Toast toast={toast} />
     </>

@@ -16,7 +16,7 @@ export function QList({ list, empty, onOpen }) {
   return (
     <div className="qlist">
       {list.map((c) => (
-        <button key={c.id} className="qitem" onClick={() => onOpen(c.id)}>
+        <button key={c.id} className="qitem" onClick={() => onOpen(c)}>
           <div className="t"><b>{c.title}</b><span>{c.ref} &nbsp;{c.cat}</span></div>
           <Pill stage={c.stage} />
         </button>

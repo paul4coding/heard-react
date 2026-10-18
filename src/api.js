@@ -23,7 +23,7 @@ function errorMessage(data, status) {
   return `Request failed (${status})`;
 }
 
-async function request(path, { method = 'GET', json, form } = {}) {
+async function request(path, { method = 'GET', json, form, withHeaders = false } = {}) {
   const headers = {};
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -42,7 +42,7 @@ async function request(path, { method = 'GET', json, form } = {}) {
   }
   const data = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) throw new ApiError(errorMessage(data, res.status), res.status);
-  return data;
+  return withHeaders ? { data, headers: res.headers } : data;
 }
 
 /* ---------- Auth ---------- */
@@ -107,10 +107,20 @@ export function toComplaint(c) {
 }
 
 /* ---------- Complaints ---------- */
-export async function listComplaints(role) {
-  const rows = await request(`${PREFIX[role.toUpperCase()]}/complaints?limit=200`);
-  return rows.map(toComplaint);
+export const PAGE_SIZE = 20;
+
+// Liste paginée côté serveur : { items, total } (le total vient de l'en-tête X-Total-Count)
+export async function listComplaints(role, { status, q, skip = 0, limit = PAGE_SIZE, unassigned } = {}) {
+  const p = new URLSearchParams({ skip, limit });
+  if (status) p.set('status', status);
+  if (q) p.set('q', q);
+  if (unassigned) p.set('unassigned', 'true');
+  const { data, headers } = await request(`${PREFIX[role.toUpperCase()]}/complaints?${p}`, { withHeaders: true });
+  return { items: data.map(toComplaint), total: Number(headers.get('X-Total-Count') ?? data.length) };
 }
+
+// Compteurs par statut (étudiant / coordinateur)
+export const getMyStats = (role) => request(`${PREFIX[role.toUpperCase()]}/stats`);
 
 export async function getComplaint(role, id) {
   return toComplaint(await request(`${PREFIX[role.toUpperCase()]}/complaints/${id}`));

@@ -360,3 +360,13 @@ html{scroll-behavior:smooth}
 .prio.high{color:var(--warn)}
 .prio.urgent{color:var(--bad)}
 .btn:disabled{opacity:.55;cursor:not-allowed}
+
+/* Pagination */
+.pager{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}
+.pager-info{color:var(--ink-3);font-size:13.5px}
+.pager-btns{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pager-btns .btn{height:36px;padding:0 14px}
+.pager-page{color:var(--ink-2);font-weight:600;font-size:13.5px;padding:0 4px}
+.tablewrap.busy{opacity:.55;transition:opacity .15s}
+
+.more-note{margin-top:14px;color:var(--ink-3);font-size:13.5px}

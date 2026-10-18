@@ -9,7 +9,7 @@ export function ComplaintSuccess({ complaint: c, onView, onAgain }) {
       <p>An administrator will review it shortly. We will update the status as it moves.</p>
       <div className="refbox">{c.ref}</div>
       <div className="acts">
-        <button className="btn primary" onClick={() => onView(c.id)}>View complaint</button>
+        <button className="btn primary" onClick={() => onView(c)}>View complaint</button>
         <button className="btn" onClick={onAgain}>Lodge another</button>
       </div>
     </section>
