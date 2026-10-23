@@ -155,17 +155,45 @@ export default function App() {
     refreshAll(); // d'autres utilisateurs ont pu modifier des plaintes
   };
 
-  const create = async (data) => {
+  // La plainte est créée d'abord ; les fichiers sont envoyés ensuite. Si l'envoi échoue, la plainte reste créée
+  // et l'étudiant est prévenu (il peut rajouter les fichiers depuis la plainte).
+  const create = async ({ files = [], ...data }) => {
+    let c;
     try {
-      const c = await api.createComplaint(data);
-      setLastNew(c);
-      refreshAll();
-      window.scrollTo(0, 0);
-      return null;
+      c = await api.createComplaint(data);
     } catch (e) {
       return fail(e);
     }
+    let uploadWarning = null;
+    if (files.length) {
+      try {
+        c = await api.uploadAttachments(c.id, files);
+      } catch (e) {
+        if (e.status === 401) return fail(e);
+        uploadWarning = `Your complaint was lodged, but the files could not be uploaded: ${e.message} You can add them from the complaint.`;
+      }
+    }
+    setLastNew({ ...c, uploadWarning });
+    refreshAll();
+    window.scrollTo(0, 0);
+    return null;
   };
+
+  const withSelected = async (call, okMessage) => {
+    const id = selected.id;
+    try {
+      const c = await call(id);
+      setSelected((cur) => (cur && cur.id === id ? c : cur));
+      notify(okMessage);
+      return null;
+    } catch (e) {
+      api.getComplaint(role, id).then((c) => setSelected((cur) => (cur && cur.id === id ? c : cur))).catch(() => {});
+      return fail(e);
+    }
+  };
+
+  const uploadMore = (files) => withSelected((id) => api.uploadAttachments(id, files), files.length > 1 ? 'Files uploaded' : 'File uploaded');
+  const removeAttachment = (aid) => withSelected((id) => api.deleteAttachment(id, aid), 'File removed');
 
   // Applique une action du tiroir, dans l'ordre : affectation/priorité -> message -> statut
   const act = async (a) => {
@@ -242,8 +270,8 @@ export default function App() {
       </AppShell>
       <Drawer
         complaint={selected}
-        role={role} coordinators={coordinators} loading={detailLoading}
-        open={open} onClose={close} onAction={act}
+        role={role} userId={user.id} coordinators={coordinators} loading={detailLoading}
+        open={open} onClose={close} onAction={act} onUpload={uploadMore} onDeleteAttachment={removeAttachment}
       />
       <Toast toast={toast} />
     </>

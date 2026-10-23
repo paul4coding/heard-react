@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import FilePicker from '../components/FilePicker.jsx';
 import Icon from '../components/Icon.jsx';
+import { MAX_FILES } from '../utils.js';
 
 export function ComplaintSuccess({ complaint: c, onView, onAgain }) {
   return (
@@ -7,6 +9,10 @@ export function ComplaintSuccess({ complaint: c, onView, onAgain }) {
       <div className="ok"><Icon name="check" /></div>
       <h2>Complaint lodged</h2>
       <p>An administrator will review it shortly. We will update the status as it moves.</p>
+      {c.uploadWarning && <p className="error" role="alert" style={{ margin: '16px 0 0' }}>{c.uploadWarning}</p>}
+      {!c.uploadWarning && c.attachments.length > 0 && (
+        <p style={{ marginTop: 8 }}>{c.attachments.length} file{c.attachments.length === 1 ? '' : 's'} attached.</p>
+      )}
       <div className="refbox">{c.ref}</div>
       <div className="acts">
         <button className="btn primary" onClick={() => onView(c)}>View complaint</button>
@@ -20,6 +26,7 @@ export default function NewComplaint({ categories, onSubmit }) {
   const [title, setTitle] = useState('');
   const [catId, setCatId] = useState(categories[0]?.id ?? null);
   const [desc, setDesc] = useState('');
+  const [files, setFiles] = useState([]);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -30,7 +37,7 @@ export default function NewComplaint({ categories, onSubmit }) {
     if (!catId) return setErr('Choose a category.');
     setBusy(true);
     setErr('');
-    const error = await onSubmit({ title: title.trim(), description: desc.trim(), category_id: catId });
+    const error = await onSubmit({ title: title.trim(), description: desc.trim(), category_id: catId, files });
     if (error) {
       setErr(error);
       setBusy(false);
@@ -55,8 +62,11 @@ export default function NewComplaint({ categories, onSubmit }) {
         </fieldset>
         <label className="field"><span className="l">What happened?</span>
           <textarea className="input" placeholder="Describe the problem, when it started and how it affects you." value={desc} onChange={(e) => setDesc(e.target.value)} /></label>
+        <div className="field"><span className="l">Photos or video <span style={{ fontWeight: 400, color: 'var(--ink-3)' }}>(optional)</span></span>
+          <FilePicker capacity={MAX_FILES} onChange={setFiles} disabled={busy} />
+        </div>
         {err && <p className="error" role="alert">{err}</p>}
-        <button className="btn primary lg" type="submit" disabled={busy}>{busy ? 'Sending…' : 'Lodge complaint'}</button>
+        <button className="btn primary lg" type="submit" disabled={busy}>{busy ? (files.length ? 'Sending and uploading…' : 'Sending…') : 'Lodge complaint'}</button>
       </form>
 
       <aside className="panel pad">

@@ -23,7 +23,7 @@ function errorMessage(data, status) {
   return `Request failed (${status})`;
 }
 
-async function request(path, { method = 'GET', json, form, withHeaders = false } = {}) {
+async function request(path, { method = 'GET', json, form, formData, withHeaders = false } = {}) {
   const headers = {};
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -33,6 +33,8 @@ async function request(path, { method = 'GET', json, form, withHeaders = false }
     body = JSON.stringify(json);
   } else if (form) {
     body = new URLSearchParams(form);
+  } else if (formData) {
+    body = formData; // multipart : le navigateur ajoute lui-même le Content-Type avec la boundary
   }
   let res;
   try {
@@ -102,6 +104,9 @@ export function toComplaint(c) {
     assigneeId: c.assigned_to?.id ?? null,
     date: fmtDate(c.created_at),
     updated: fmtDate(c.updated_at),
+    attachments: (c.attachments || []).map((a) => ({
+      id: a.id, name: a.filename, type: a.content_type, size: a.size, uploaderId: a.uploaded_by_id,
+    })),
     log: [...history, ...comments].sort((a, b) => a.t - b.t),
   };
 }
@@ -145,6 +150,31 @@ export async function setStatus(role, id, status) {
 }
 
 export const listCategories = () => request('/api/student/categories');
+
+/* ---------- Pièces jointes ---------- */
+export async function uploadAttachments(id, files) {
+  const fd = new FormData();
+  files.forEach((f) => fd.append('files', f));
+  return toComplaint(await request(`/api/student/complaints/${id}/attachments`, { method: 'POST', formData: fd }));
+}
+
+export async function deleteAttachment(id, attachmentId) {
+  return toComplaint(await request(`/api/student/complaints/${id}/attachments/${attachmentId}`, { method: 'DELETE' }));
+}
+
+// L'endpoint exige le jeton : on télécharge le fichier avec l'en-tête Authorization puis on en fait une URL locale
+export async function fetchAttachmentUrl(role, id, attachmentId) {
+  let res;
+  try {
+    res = await fetch(`${BASE}${PREFIX[role.toUpperCase()]}/complaints/${id}/attachments/${attachmentId}`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+  } catch {
+    throw new ApiError('Cannot reach the server. Is the API running?', 0);
+  }
+  if (!res.ok) throw new ApiError(`Could not load the file (${res.status})`, res.status);
+  return URL.createObjectURL(await res.blob());
+}
 
 /* ---------- Admin ---------- */
 export async function assign(id, assignedToId, priority) {
