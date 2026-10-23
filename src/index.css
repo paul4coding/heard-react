@@ -54,7 +54,7 @@ textarea.input{height:auto;min-height:130px;padding:12px 14px;resize:vertical;li
 .input::placeholder{color:var(--ink-3)}
 .input:hover{border-color:var(--ink-3)}
 .input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
-.input-wrap{position:relative}
+.input-wrap{position:relative;display:block}
 .input-wrap .input{padding-left:42px}
 .input-wrap>svg.i{position:absolute;left:14px;top:14px;color:var(--ink-3)}
 .input-wrap .peek{position:absolute;right:6px;top:5px;width:36px;height:36px;border:0;background:none;color:var(--ink-3);border-radius:10px;display:grid;place-items:center}
