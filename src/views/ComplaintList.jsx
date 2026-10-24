@@ -10,6 +10,8 @@ const HEADS = {
   admin: ['Complaint', 'Category', 'From', 'Status', 'Priority', 'Assigned to', 'Updated'],
   coordinator: ['Complaint', 'Category', 'From', 'Status', 'Priority', 'Updated'],
 };
+// Release 1 : les plaintes ne sont pas encore catégorisées (l'administrateur le fera au sprint 3) -> pas de colonne vide
+const headsFor = (role, showCat) => HEADS[role].filter((h) => showCat || h !== 'Category');
 
 export const Priority = ({ value }) =>
   value ? <span className={`prio ${value.toLowerCase()}`}>{value.charAt(0) + value.slice(1).toLowerCase()}</span> : <span style={{ color: 'var(--ink-3)' }}>None</span>;
@@ -65,10 +67,12 @@ export default function ComplaintList({ role, refreshKey, onOpen, onError }) {
   const changeFilter = (f) => { setFilter(f); setPage(0); };
   const reset = () => { setInput(''); setQuery(''); setFilter('all'); setPage(0); };
 
+  const showCat = rows.some((c) => c.cat);
+
   const cells = (c) => (
     <>
       <td><span className="ref">{c.ref}</span><span className="ttl">{c.title}</span></td>
-      <td className="muted">{c.cat}</td>
+      {showCat && <td className="muted">{c.cat ?? '—'}</td>}
       {role === 'student' && (
         <td>
           <Mini stage={c.stage} />
@@ -122,7 +126,7 @@ export default function ComplaintList({ role, refreshKey, onOpen, onError }) {
           </div>
         ) : (
           <table>
-            <thead><tr>{HEADS[role].map((h) => <th key={h}>{h}</th>)}</tr></thead>
+            <thead><tr>{headsFor(role, showCat).map((h) => <th key={h}>{h}</th>)}</tr></thead>
             <tbody>
               {rows.map((c) => (
                 <tr key={c.id} tabIndex={0} onClick={() => onOpen(c)} onKeyDown={(e) => e.key === 'Enter' && onOpen(c)}>

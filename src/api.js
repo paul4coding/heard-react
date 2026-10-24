@@ -95,7 +95,7 @@ export function toComplaint(c) {
     ref: c.reference,
     title: c.title,
     desc: c.description,
-    cat: c.category.name,
+    cat: c.category?.name ?? null, // release 1 : l'administrateur catégorisera plus tard (sprint 3)
     stage,
     status: c.status,
     priority: c.priority,

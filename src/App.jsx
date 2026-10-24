@@ -18,7 +18,6 @@ export default function App() {
   const [booting, setBooting] = useState(!!api.getToken());
   const [overview, setOverview] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0); // incrémenté après chaque modification : les listes se rechargent
-  const [categories, setCategories] = useState([]);
   const [coordinators, setCoordinators] = useState([]);
   const [view, setView] = useState('overview');
   const [lastNew, setLastNew] = useState(null);
@@ -91,7 +90,6 @@ export default function App() {
 
   const loadStatic = useCallback(async (u) => {
     try {
-      if (u.role === 'student') setCategories(await api.listCategories());
       if (u.role === 'admin') setCoordinators((await api.listCoordinators()).map(api.toUser));
     } catch (e) {
       fail(e);
@@ -251,7 +249,7 @@ export default function App() {
     case 'student.new':
       content = lastNew
         ? <ComplaintSuccess complaint={lastNew} onView={openComplaint} onAgain={() => setLastNew(null)} />
-        : <NewComplaint categories={categories} onSubmit={create} />;
+        : <NewComplaint onSubmit={create} />;
       break;
     case 'admin.overview':
       content = <AdminOverview {...props} />;

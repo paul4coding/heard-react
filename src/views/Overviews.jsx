@@ -28,7 +28,7 @@ export function StudentOverview({ data, name, onOpen, onNew, onAll }) {
         <div className="cards">
           {active.map((c) => (
             <button key={c.id} className="panel tcard" onClick={() => onOpen(c)}>
-              <div className="hd"><span>{c.ref}</span><span>{c.cat}</span></div>
+              <div className="hd"><span>{c.ref}</span><span>{c.cat ?? ''}</span></div>
               <h3>{c.title}</h3>
               <Tracker stage={c.stage} />
             </button>
@@ -52,7 +52,8 @@ export function StudentOverview({ data, name, onOpen, onNew, onAll }) {
 export function AdminOverview({ data, onOpen, onAll }) {
   if (!data) return <Loading />;
   const { stats, unassigned } = data;
-  const entries = Object.entries(stats?.by_category ?? {});
+  // Release 1 : sans catégorie tant que l'administrateur n'a pas catégorisé (sprint 3) -> pas de graphique vide
+  const entries = Object.entries(stats?.by_category ?? {}).filter(([k]) => k !== 'Uncategorized');
   const max = Math.max(...entries.map(([, n]) => n), 1);
 
   return (
@@ -64,7 +65,7 @@ export function AdminOverview({ data, onOpen, onAll }) {
         [count(stats, 'CLOSED'), 'Closed'],
       ]} />
       <SecHead title="Needs a decision" note={`${unassigned.total} waiting for assignment`} />
-      <div className="two">
+      <div className={`two${entries.length ? '' : ' one'}`}>
         <div className="panel pad">
           <QList list={unassigned.items} empty="Every complaint has been assigned." onOpen={onOpen} />
           {unassigned.total > unassigned.items.length && (
@@ -74,7 +75,7 @@ export function AdminOverview({ data, onOpen, onAll }) {
             </p>
           )}
         </div>
-        <div className="panel pad">
+        {entries.length > 0 && <div className="panel pad">
           <h3 style={{ marginBottom: 16 }}>Complaints by category</h3>
           {entries.length === 0 && <p style={{ color: 'var(--ink-3)' }}>No complaints yet.</p>}
           <div className="bars">
@@ -90,7 +91,7 @@ export function AdminOverview({ data, onOpen, onAll }) {
               Average resolution time: <b>{stats.avg_resolution_hours} h</b>
             </p>
           )}
-        </div>
+        </div>}
       </div>
     </>
   );

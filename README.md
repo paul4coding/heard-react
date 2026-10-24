@@ -7,7 +7,7 @@ React + Vite single-page app for lodging and following student complaints. It ta
 
 ## Features
 - **Public landing page** and sign-in (accounts are created by an administrator).
-- **Student**: lodge a complaint (title, category, description, optional photos or videos), follow its progress, exchange messages, add or remove files while the complaint is open.
+- **Student**: lodge a complaint (title, description, optional photos or videos; no category: the administrator will categorize complaints in Sprint 3), follow its progress, exchange messages, add or remove files while the complaint is open.
 - **Coordinator**: work through assigned complaints (In progress, Resolved with a resolution note) and message the student.
 - **Administrator**: dashboard with live statistics, assign complaints to coordinators, set priority, close or reopen, comment.
 - **Attachments**: up to 5 images or videos (PNG, JPEG, GIF, WebP, MP4, MOV, WebM, 50 MB each) with drag and drop, previews, a full-screen viewer, and size/type checks before sending. Everyone who can open the complaint can view the files.

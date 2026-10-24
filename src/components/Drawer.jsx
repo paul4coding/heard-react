@@ -168,7 +168,7 @@ export default function Drawer({ complaint: c, role, userId, coordinators, open,
         <h2>{c.title}</h2>
         <div className="dsec"><Tracker stage={c.stage} /></div>
         <dl className="panel meta">
-          <div><dt>Category</dt><dd>{c.cat}</dd></div>
+          {c.cat && <div><dt>Category</dt><dd>{c.cat}</dd></div>}
           <div><dt>Priority</dt><dd><Priority value={c.priority} /></dd></div>
           <div><dt>Submitted</dt><dd>{c.date}</dd></div>
           <div>
