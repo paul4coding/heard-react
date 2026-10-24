@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Icon from '../components/Icon.jsx';
 import Pager from '../components/Pager.jsx';
 import { Pill, Mini } from '../components/Status.jsx';
-import { STAGES, STATUSES } from '../data.js';
+import { STAGES, STATUSES, SHOW_PRIORITY } from '../data.js';
 import { listComplaints, PAGE_SIZE } from '../api.js';
 
 const HEADS = {
@@ -11,7 +11,8 @@ const HEADS = {
   coordinator: ['Complaint', 'Category', 'From', 'Status', 'Priority', 'Submitted'],
 };
 // Release 1 : les plaintes ne sont pas encore catégorisées (l'administrateur le fera au sprint 3) -> pas de colonne vide
-const headsFor = (role, showCat) => HEADS[role].filter((h) => showCat || h !== 'Category');
+// Priorité : masquée jusqu'au sprint 4 (voir SHOW_PRIORITY)
+const headsFor = (role, showCat) => HEADS[role].filter((h) => (showCat || h !== 'Category') && (SHOW_PRIORITY || h !== 'Priority'));
 
 export const Priority = ({ value }) =>
   value ? <span className={`prio ${value.toLowerCase()}`}>{value.charAt(0) + value.slice(1).toLowerCase()}</span> : <span style={{ color: 'var(--ink-3)' }}>None</span>;
@@ -82,7 +83,7 @@ export default function ComplaintList({ role, refreshKey, onOpen, onError }) {
       )}
       {role !== 'student' && <td className="muted">{c.owner}</td>}
       {role !== 'student' && <td><Pill stage={c.stage} /></td>}
-      {role !== 'student' && <td><Priority value={c.priority} /></td>}
+      {SHOW_PRIORITY && role !== 'student' && <td><Priority value={c.priority} /></td>}
       {role === 'admin' && (
         <td className="muted">
           {c.assignee ? c.assignee : <span style={{ color: 'var(--bad)', fontWeight: 600 }}>Unassigned</span>}

@@ -3,7 +3,7 @@ import Attachments from './Attachments.jsx';
 import Icon from './Icon.jsx';
 import { Pill, Tracker } from './Status.jsx';
 import { Priority } from '../views/ComplaintList.jsx';
-import { STAGES, PRIORITIES } from '../data.js';
+import { STAGES, PRIORITIES, SHOW_PRIORITY } from '../data.js';
 
 // Transitions autorisées par le backend (indices de STAGES)
 const NEXT = { 0: [1], 1: [2], 2: [3], 3: [4, 2], 4: [] };
@@ -114,12 +114,14 @@ function AdminForm({ c, coordinators, onAction }) {
           {c.stage === 0 && <small>Assigning moves the complaint to Assigned.</small>}
         </label>
       )}
-      <label className="field"><span className="l">Priority</span>
-        <select className="input" value={priority} onChange={(e) => setPriority(e.target.value)}>
-          <option value="">No priority</option>
-          {PRIORITIES.map((p) => <option key={p} value={p}>{p.charAt(0) + p.slice(1).toLowerCase()}</option>)}
-        </select>
-      </label>
+      {SHOW_PRIORITY && (
+        <label className="field"><span className="l">Priority</span>
+          <select className="input" value={priority} onChange={(e) => setPriority(e.target.value)}>
+            <option value="">No priority</option>
+            {PRIORITIES.map((p) => <option key={p} value={p}>{p.charAt(0) + p.slice(1).toLowerCase()}</option>)}
+          </select>
+        </label>
+      )}
       {options.length > 0 && (
         <label className="field"><span className="l">Status</span>
           <select className="input" value={stage} onChange={(e) => setStage(+e.target.value)}>
@@ -169,7 +171,7 @@ export default function Drawer({ complaint: c, role, userId, coordinators, open,
         <div className="dsec"><Tracker stage={c.stage} /></div>
         <dl className="panel meta">
           {c.cat && <div><dt>Category</dt><dd>{c.cat}</dd></div>}
-          <div><dt>Priority</dt><dd><Priority value={c.priority} /></dd></div>
+          {SHOW_PRIORITY && <div><dt>Priority</dt><dd><Priority value={c.priority} /></dd></div>}
           <div><dt>Submitted</dt><dd>{c.date}</dd></div>
           <div>
             <dt>{isStudent ? 'Handled by' : 'From'}</dt>
