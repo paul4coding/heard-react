@@ -3,6 +3,11 @@ export const STATUSES = ['SUBMITTED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CL
 export const STAGES = ['Submitted', 'Assigned', 'In progress', 'Resolved', 'Closed'];
 export const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
+// La catégorisation des plaintes par l'administrateur est la story 6 du plan (Sprint 3, Release 2).
+// Tant qu'elle n'est pas livrée, aucune catégorie n'est affichée, même si des anciennes plaintes en ont une.
+// Au Sprint 3 : passer à true (colonne, détail, graphique) et ajouter l'action admin pour catégoriser.
+export const SHOW_CATEGORIES = false;
+
 // Rôles de l'interface (le backend envoie STUDENT / COORDINATOR / ADMIN)
 export const ROLE_LABEL = { student: 'Student', coordinator: 'Coordinator', admin: 'Administrator' };
 

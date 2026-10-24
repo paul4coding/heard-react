@@ -60,5 +60,6 @@ src/
 | Comment | ✅ | ✅ | ✅ |
 
 ## Notes
+- **Categories are hidden** until Sprint 3 (story 6: the administrator categorizes complaints), even for old complaints that have one. The switch is `SHOW_CATEGORIES` in `src/data.js` (set it to `true` and add the admin action in Sprint 3).
 - The API has no public registration, anonymous complaints or ratings, so the UI does not offer them.
 - Never commit `.env` files or secrets.

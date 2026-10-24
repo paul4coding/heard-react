@@ -1,4 +1,4 @@
-import { STATUSES, STAGES } from './data.js';
+import { STATUSES, STAGES, SHOW_CATEGORIES } from './data.js';
 
 const BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 const TOKEN_KEY = 'heard_token';
@@ -96,7 +96,7 @@ export function toComplaint(c) {
     ref: c.reference,
     title: c.title,
     desc: c.description,
-    cat: c.category?.name ?? null, // release 1 : l'administrateur catégorisera plus tard (sprint 3)
+    cat: SHOW_CATEGORIES ? c.category?.name ?? null : null, // masquée jusqu'au sprint 3 (voir SHOW_CATEGORIES)
     stage,
     status: c.status,
     priority: c.priority,

@@ -1,6 +1,7 @@
 import Icon from '../components/Icon.jsx';
 import { Tracker } from '../components/Status.jsx';
 import { Strip, QList, SecHead } from '../components/Lists.jsx';
+import { SHOW_CATEGORIES } from '../data.js';
 
 const count = (stats, ...keys) => keys.reduce((n, k) => n + (stats?.by_status?.[k] ?? 0), 0);
 const Loading = () => <div className="panel empty"><b>Loading…</b></div>;
@@ -53,7 +54,7 @@ export function AdminOverview({ data, onOpen, onAll }) {
   if (!data) return <Loading />;
   const { stats, unassigned } = data;
   // Release 1 : sans catégorie tant que l'administrateur n'a pas catégorisé (sprint 3) -> pas de graphique vide
-  const entries = Object.entries(stats?.by_category ?? {}).filter(([k]) => k !== 'Uncategorized');
+  const entries = SHOW_CATEGORIES ? Object.entries(stats?.by_category ?? {}).filter(([k]) => k !== 'Uncategorized') : [];
   const max = Math.max(...entries.map(([, n]) => n), 1);
 
   return (
