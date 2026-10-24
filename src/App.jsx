@@ -5,6 +5,7 @@ import Drawer from './components/Drawer.jsx';
 import Landing from './components/Landing.jsx';
 import Toast from './components/Toast.jsx';
 import ComplaintList from './views/ComplaintList.jsx';
+import UsersView from './views/UsersView.jsx';
 import NewComplaint, { ComplaintSuccess } from './views/NewComplaint.jsx';
 import { StudentOverview, AdminOverview, CoordinatorOverview } from './views/Overviews.jsx';
 import { STATUSES } from './data.js';
@@ -105,9 +106,9 @@ export default function App() {
       .finally(() => setBooting(false));
   }, [loadOverview, loadStatic]);
 
-  const login = async (username, password) => {
+  const login = async (email, password) => {
     try {
-      const u = await api.login(username, password);
+      const u = await api.login(email, password);
       setUser(u);
       setView('overview');
       setLastNew(null);
@@ -117,7 +118,7 @@ export default function App() {
       loadStatic(u);
       return null;
     } catch (e) {
-      return e.status === 401 ? 'Incorrect username or password.' : e.message;
+      return e.status === 401 ? 'Incorrect email or password.' : e.message;
     }
   };
 
@@ -135,6 +136,8 @@ export default function App() {
     setSelected(c);
     setOpen(true);
     setDetailLoading(true);
+    // Liste des coordinateurs à jour (un compte a pu être créé ou désactivé depuis l'écran Users)
+    if (role === 'admin') api.listCoordinators().then((rows) => setCoordinators(rows.map(api.toUser))).catch(() => {});
     try {
       const full = await api.getComplaint(role, c.id);
       setSelected((cur) => (cur && cur.id === c.id ? full : cur));
@@ -168,7 +171,7 @@ export default function App() {
         c = await api.uploadAttachments(c.id, files);
       } catch (e) {
         if (e.status === 401) return fail(e);
-        uploadWarning = `Your complaint was lodged, but the files could not be uploaded: ${e.message} You can add them from the complaint.`;
+        uploadWarning = `Your complaint was lodged, but the photo could not be uploaded: ${e.message} You can add it from the complaint.`;
       }
     }
     setLastNew({ ...c, uploadWarning });
@@ -190,8 +193,8 @@ export default function App() {
     }
   };
 
-  const uploadMore = (files) => withSelected((id) => api.uploadAttachments(id, files), files.length > 1 ? 'Files uploaded' : 'File uploaded');
-  const removeAttachment = (aid) => withSelected((id) => api.deleteAttachment(id, aid), 'File removed');
+  const uploadMore = (files) => withSelected((id) => api.uploadAttachments(id, files), 'Photo uploaded');
+  const removeAttachment = (aid) => withSelected((id) => api.deleteAttachment(id, aid), 'Photo removed');
 
   // Applique une action du tiroir, dans l'ordre : affectation/priorité -> message -> statut
   const act = async (a) => {
@@ -256,6 +259,9 @@ export default function App() {
       break;
     case 'coordinator.overview':
       content = <CoordinatorOverview {...props} />;
+      break;
+    case 'admin.users':
+      content = <UsersView key="users" me={user} onNotify={notify} onError={fail} />;
       break;
     default:
       content = <ComplaintList key={`${role}.${view}`} role={role} refreshKey={refreshKey} onOpen={openComplaint} onError={fail} />;

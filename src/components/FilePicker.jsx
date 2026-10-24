@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Icon from './Icon.jsx';
-import { ACCEPT, MAX_MB, checkFile, formatSize, isVideo } from '../utils.js';
+import { ACCEPT, MAX_MB, checkFile, formatSize } from '../utils.js';
 
-// Zone de dépôt + aperçus. Garde sa propre liste ; le parent reçoit un tableau de File via onChange.
+// Zone de dépôt + aperçu d'image. Garde sa propre liste ; le parent reçoit un tableau de File via onChange.
 // Pour la vider (après un envoi), le parent change la `key` du composant.
+// Sprint 1 : une seule image facultative par plainte (capacity = 1).
 export default function FilePicker({ capacity, onChange, disabled = false }) {
   const [items, setItems] = useState([]);
   const [err, setErr] = useState('');
@@ -26,7 +27,7 @@ export default function FilePicker({ capacity, onChange, disabled = false }) {
     [...list].forEach((file) => {
       const bad = checkFile(file);
       if (bad) msg = bad;
-      else if (next.length >= capacity) msg = `You can attach up to ${capacity} more file${capacity === 1 ? '' : 's'}.`;
+      else if (next.length >= capacity) msg = capacity === 1 ? 'Only one photo can be attached. Remove it to choose another.' : `You can attach up to ${capacity} photos.`;
       else next.push({ file, url: URL.createObjectURL(file), key: `${file.name}-${file.size}-${file.lastModified}-${next.length}` });
     });
     setErr(msg);
@@ -49,18 +50,18 @@ export default function FilePicker({ capacity, onChange, disabled = false }) {
         onDrop={(e) => { e.preventDefault(); setOver(false); add(e.dataTransfer.files); }}
       >
         <div className="ic"><Icon name="upload" /></div>
-        <b>Drag files here</b>
-        <p>Photos or video (PNG, JPEG, GIF, WebP, MP4, MOV, WebM), up to {capacity} file{capacity === 1 ? '' : 's'} and {MAX_MB} MB each</p>
-        <button type="button" className="btn" disabled={disabled || items.length >= capacity} onClick={() => input.current.click()}>Choose files</button>
-        <input ref={input} type="file" accept={ACCEPT} multiple hidden data-testid="file-input"
+        <b>Drag a photo here</b>
+        <p>PNG, JPEG, GIF or WebP, up to {MAX_MB} MB</p>
+        <button type="button" className="btn" disabled={disabled || items.length >= capacity} onClick={() => input.current.click()}>Choose a photo</button>
+        <input ref={input} type="file" accept={ACCEPT} multiple={capacity > 1} hidden data-testid="file-input"
           onChange={(e) => { add(e.target.files); e.target.value = ''; }} />
       </div>
       {items.length > 0 && (
         <div className="previews">
           {items.map((i, idx) => (
             <div className="pv" key={i.key}>
-              {isVideo(i.file.type) ? <video src={i.url} muted preload="metadata" /> : <img src={i.url} alt={i.file.name} />}
-              <span className="tag">{isVideo(i.file.type) ? 'Video' : 'Photo'} · {formatSize(i.file.size)}</span>
+              <img src={i.url} alt={i.file.name} />
+              <span className="tag">Photo · {formatSize(i.file.size)}</span>
               <button type="button" className="x" aria-label={`Remove ${i.file.name}`} onClick={() => remove(idx)}><Icon name="x" /></button>
             </div>
           ))}

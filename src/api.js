@@ -48,8 +48,9 @@ async function request(path, { method = 'GET', json, form, formData, withHeaders
 }
 
 /* ---------- Auth ---------- */
-export async function login(username, password) {
-  const t = await request('/auth/login', { method: 'POST', form: { username, password } });
+// L'identifiant de connexion est l'email (le champ s'appelle `username` dans le standard OAuth2 de l'API)
+export async function login(email, password) {
+  const t = await request('/auth/login', { method: 'POST', form: { username: email, password } });
   setToken(t.access_token);
   return me();
 }
@@ -189,5 +190,26 @@ export async function setPriority(id, priority) {
   return toComplaint(await request(`/api/admin/complaints/${id}/priority`, { method: 'PATCH', json: { priority } }));
 }
 
-export const listCoordinators = () => request('/api/admin/users?role=COORDINATOR&limit=200');
+export const listCoordinators = () => request('/api/admin/users?role=COORDINATOR&is_active=true&limit=200');
+
+/* ---------- Gestion des comptes (admin) ---------- */
+const toManagedUser = (u) => ({
+  id: u.id,
+  name: `${u.first_name} ${u.last_name}`.trim() || u.username,
+  email: u.email,
+  role: roleKey(u.role),
+  active: u.is_active,
+});
+
+export async function listUsers({ q, role, active, skip = 0, limit = PAGE_SIZE } = {}) {
+  const p = new URLSearchParams({ skip, limit });
+  if (q) p.set('q', q);
+  if (role) p.set('role', role.toUpperCase());
+  if (active !== undefined) p.set('is_active', String(active));
+  const { data, headers } = await request(`/api/admin/users?${p}`, { withHeaders: true });
+  return { items: data.map(toManagedUser), total: Number(headers.get('X-Total-Count') ?? data.length) };
+}
+
+export const createUser = async (body) => toManagedUser(await request('/api/admin/users', { method: 'POST', json: body }));
+export const updateUser = async (id, body) => toManagedUser(await request(`/api/admin/users/${id}`, { method: 'PATCH', json: body }));
 export const getStats = () => request('/api/admin/stats');

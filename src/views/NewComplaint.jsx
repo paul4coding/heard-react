@@ -11,7 +11,7 @@ export function ComplaintSuccess({ complaint: c, onView, onAgain }) {
       <p>An administrator will review it shortly. We will update the status as it moves.</p>
       {c.uploadWarning && <p className="error" role="alert" style={{ margin: '16px 0 0' }}>{c.uploadWarning}</p>}
       {!c.uploadWarning && c.attachments.length > 0 && (
-        <p style={{ marginTop: 8 }}>{c.attachments.length} file{c.attachments.length === 1 ? '' : 's'} attached.</p>
+        <p style={{ marginTop: 8 }}>Your photo is attached.</p>
       )}
       <div className="refbox">{c.ref}</div>
       <div className="acts">
@@ -49,7 +49,7 @@ export default function NewComplaint({ onSubmit }) {
           <input className="input" placeholder="e.g. Broken projector in Room B204" maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} /></label>
         <label className="field"><span className="l">What happened?</span>
           <textarea className="input" placeholder="Describe the problem, when it started and how it affects you." value={desc} onChange={(e) => setDesc(e.target.value)} /></label>
-        <div className="field"><span className="l">Photos or video <span style={{ fontWeight: 400, color: 'var(--ink-3)' }}>(optional)</span></span>
+        <div className="field"><span className="l">Photo <span style={{ fontWeight: 400, color: 'var(--ink-3)' }}>(optional)</span></span>
           <FilePicker capacity={MAX_FILES} onChange={setFiles} disabled={busy} />
         </div>
         {err && <p className="error" role="alert">{err}</p>}

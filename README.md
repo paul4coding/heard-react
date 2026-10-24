@@ -6,11 +6,11 @@ React + Vite single-page app for lodging and following student complaints. It ta
 `Submitted → Assigned → In progress → Resolved → Closed`.
 
 ## Features
-- **Public landing page** and sign-in (accounts are created by an administrator).
-- **Student**: lodge a complaint (title, description, optional photos or videos; no category: the administrator will categorize complaints in Sprint 3), follow its progress, exchange messages, add or remove files while the complaint is open.
+- **Public landing page** and sign-in with **email and password** (accounts are created by an administrator).
+- **Student**: lodge a complaint (title, description and one optional photo; no category: the administrator will categorize complaints in Sprint 3), follow its progress, exchange messages, add or replace the photo while the complaint is open.
 - **Coordinator**: work through assigned complaints (In progress, Resolved with a resolution note) and message the student.
-- **Administrator**: dashboard with live statistics, assign complaints to coordinators, set priority, close or reopen, comment.
-- **Attachments**: up to 5 images or videos (PNG, JPEG, GIF, WebP, MP4, MOV, WebM, 50 MB each) with drag and drop, previews, a full-screen viewer, and size/type checks before sending. Everyone who can open the complaint can view the files.
+- **Administrator**: **user management** (create, edit, deactivate and reactivate student, coordinator and administrator accounts, reset passwords), dashboard with live statistics, assign complaints to coordinators, set priority, close or reopen, comment.
+- **Photo**: one optional image (PNG, JPEG, GIF or WebP, 10 MB) with drag and drop, preview, a full-screen viewer, and type/size checks before sending. Everyone who can open the complaint can view it.
 - **Server-side pagination** (20 per page), search by title or reference, and status filters on every list.
 - Exact counters from the API, silent refresh on navigation and after every change.
 - Light and dark themes, responsive layout (mobile to desktop), keyboard-accessible forms and drawer.
@@ -30,7 +30,8 @@ npm run build               # production build in dist/
 ```
 
 ### Demo accounts
-When the backend is seeded (`python -m scripts.seed`): `student`, `coord`, `admin`, all with password `admin123`.
+When the backend is seeded (`python -m scripts.seed`): `student@univ.edu`, `coord@univ.edu`, `admin@univ.edu`, all with password `admin123`.
+Sign in with the email, for example `admin@univ.edu`.
 **Change or delete them before deploying.**
 
 ## Configuration

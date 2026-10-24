@@ -390,3 +390,13 @@ html{scroll-behavior:smooth}
 .lb-body p{color:#EEF0FF;font-size:13.5px;margin:0}
 
 .two.one{grid-template-columns:1fr}
+
+/* Users screen */
+.field-err{color:var(--bad)!important;font-weight:500}
+.push-right{margin-left:auto}
+.btn.danger{background:var(--bad);color:#fff;border-color:transparent}
+.btn.danger:hover{filter:brightness(1.08);background:var(--bad)}
+.confirm-box{border:1px solid var(--bad);background:var(--bad-soft);border-radius:14px;padding:14px 16px}
+.confirm-box b{display:block;color:var(--bad)}
+.confirm-box p{color:var(--ink-2);font-size:14px;margin:4px 0 12px}
+.confirm-acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}

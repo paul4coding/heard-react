@@ -6,9 +6,9 @@ import { STAGES, STATUSES } from '../data.js';
 import { listComplaints, PAGE_SIZE } from '../api.js';
 
 const HEADS = {
-  student: ['Complaint', 'Category', 'Progress', 'Updated'],
-  admin: ['Complaint', 'Category', 'From', 'Status', 'Priority', 'Assigned to', 'Updated'],
-  coordinator: ['Complaint', 'Category', 'From', 'Status', 'Priority', 'Updated'],
+  student: ['Complaint', 'Category', 'Progress', 'Submitted'],
+  admin: ['Complaint', 'Category', 'From', 'Status', 'Priority', 'Assigned to', 'Submitted'],
+  coordinator: ['Complaint', 'Category', 'From', 'Status', 'Priority', 'Submitted'],
 };
 // Release 1 : les plaintes ne sont pas encore catégorisées (l'administrateur le fera au sprint 3) -> pas de colonne vide
 const headsFor = (role, showCat) => HEADS[role].filter((h) => showCat || h !== 'Category');
@@ -88,7 +88,7 @@ export default function ComplaintList({ role, refreshKey, onOpen, onError }) {
           {c.assignee ? c.assignee : <span style={{ color: 'var(--bad)', fontWeight: 600 }}>Unassigned</span>}
         </td>
       )}
-      <td className="muted">{c.updated}</td>
+      <td className="muted">{c.date}</td>
     </>
   );
 

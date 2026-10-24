@@ -8,7 +8,7 @@ export const ROLE_LABEL = { student: 'Student', coordinator: 'Coordinator', admi
 
 export const NAV = {
   student: [['overview', 'Overview', 'home'], ['mine', 'My complaints', 'list'], ['new', 'Lodge a complaint', 'plus']],
-  admin: [['overview', 'Overview', 'chart'], ['all', 'All complaints', 'list']],
+  admin: [['overview', 'Overview', 'chart'], ['all', 'All complaints', 'list'], ['users', 'Users', 'users']],
   coordinator: [['overview', 'Overview', 'home'], ['queue', 'Assigned to me', 'list']],
 };
 
@@ -21,6 +21,7 @@ export const TITLES = {
   admin: {
     overview: ['Overview', 'See what needs a decision today.'],
     all: ['All complaints', 'Assign, resolve and update every complaint on campus.'],
+    users: ['Users', 'Create, edit and deactivate student, coordinator and administrator accounts.'],
   },
   coordinator: {
     overview: ['Overview', 'Your queue and what needs an update.'],

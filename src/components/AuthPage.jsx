@@ -3,8 +3,10 @@ import Icon from './Icon.jsx';
 import Logo from './Logo.jsx';
 import { Tracker } from './Status.jsx';
 
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function AuthPage({ onLogin, onBack }) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
   const [err, setErr] = useState('');
@@ -12,13 +14,17 @@ export default function AuthPage({ onLogin, onBack }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!username.trim() || !password) {
-      setErr('Enter your username and password to continue.');
+    if (!email.trim() || !password) {
+      setErr('Enter your email address and password to continue.');
+      return;
+    }
+    if (!EMAIL.test(email.trim())) {
+      setErr('Enter a valid email address, for example you@university.edu.');
       return;
     }
     setBusy(true);
     setErr('');
-    const error = await onLogin(username.trim(), password);
+    const error = await onLogin(email.trim(), password);
     if (error) {
       setErr(error);
       setBusy(false);
@@ -48,9 +54,9 @@ export default function AuthPage({ onLogin, onBack }) {
           <h2>Welcome back</h2>
           <p className="sub">Sign in to lodge a complaint or follow up on one.</p>
           <form noValidate onSubmit={submit}>
-            <label className="field"><span className="l">Username</span>
-              <span className="input-wrap"><Icon name="user" />
-                <input className="input" placeholder="Your username" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+            <label className="field"><span className="l">Email address</span>
+              <span className="input-wrap"><Icon name="mail" />
+                <input className="input" type="email" placeholder="you@university.edu" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
               </span>
             </label>
             <label className="field"><span className="l">Password</span>
