@@ -12,6 +12,11 @@ export const SHOW_CATEGORIES = false;
 // Au Sprint 4 : passer à true (colonne, détail, champ du formulaire de l'administrateur).
 export const SHOW_PRIORITY = false;
 
+// Filtrer les plaintes par statut / catégorie est la story 14 du plan (Sprint 4, administrateur). La recherche n'est dans aucun sprint.
+// Le Sprint 1 demande seulement les listes (étudiant : ses plaintes ; admin : toutes). La pagination, elle, reste active.
+// Au Sprint 4 : passer à true (barre de recherche et filtres de statut des listes de plaintes).
+export const SHOW_FILTERS = false;
+
 // Rôles de l'interface (le backend envoie STUDENT / COORDINATOR / ADMIN)
 export const ROLE_LABEL = { student: 'Student', coordinator: 'Coordinator', admin: 'Administrator' };
 

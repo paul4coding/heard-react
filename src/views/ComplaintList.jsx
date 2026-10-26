@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Icon from '../components/Icon.jsx';
 import Pager from '../components/Pager.jsx';
 import { Pill, Mini } from '../components/Status.jsx';
-import { STAGES, STATUSES, SHOW_PRIORITY } from '../data.js';
+import { STAGES, STATUSES, SHOW_PRIORITY, SHOW_FILTERS } from '../data.js';
 import { listComplaints, PAGE_SIZE } from '../api.js';
 
 const HEADS = {
@@ -97,20 +97,22 @@ export default function ComplaintList({ role, refreshKey, onOpen, onError }) {
 
   return (
     <>
-      <div className="toolbar">
-        <label className="input-wrap">
-          <span className="sr">Search complaints</span>
-          <Icon name="search" />
-          <input className="input" type="search" placeholder="Search by title or reference" value={input} onChange={(e) => setInput(e.target.value)} />
-        </label>
-        <div className="chips" role="group" aria-label="Filter by status">
-          {['all', ...STAGES.map((_, i) => i)].map((f) => (
-            <button key={f} className="chip" aria-pressed={filter === f} onClick={() => changeFilter(f)}>
-              {f === 'all' ? 'All' : STAGES[f]}
-            </button>
-          ))}
+      {SHOW_FILTERS && (
+        <div className="toolbar">
+          <label className="input-wrap">
+            <span className="sr">Search complaints</span>
+            <Icon name="search" />
+            <input className="input" type="search" placeholder="Search by title or reference" value={input} onChange={(e) => setInput(e.target.value)} />
+          </label>
+          <div className="chips" role="group" aria-label="Filter by status">
+            {['all', ...STAGES.map((_, i) => i)].map((f) => (
+              <button key={f} className="chip" aria-pressed={filter === f} onClick={() => changeFilter(f)}>
+                {f === 'all' ? 'All' : STAGES[f]}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       <div className={`panel tablewrap${loading && loaded ? ' busy' : ''}`} aria-busy={loading}>
         {!loaded ? (
           <div className="empty"><b>Loading…</b></div>

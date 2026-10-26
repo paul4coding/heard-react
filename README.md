@@ -62,5 +62,6 @@ src/
 ## Notes
 - **Categories are hidden** until Sprint 3 (story 6: the administrator categorizes complaints), even for old complaints that have one. The switch is `SHOW_CATEGORIES` in `src/data.js` (set it to `true` and add the admin action in Sprint 3).
 - **Priority is hidden** until Sprint 4 (story 13: the administrator assigns priority levels). The switch is `SHOW_PRIORITY` in `src/data.js`; the API already supports it.
+- **Search and status filters on complaint lists are hidden** until Sprint 4 (story 14: the administrator filters complaints). The switch is `SHOW_FILTERS` in `src/data.js`; pagination stays on.
 - The API has no public registration, anonymous complaints or ratings, so the UI does not offer them.
 - Never commit `.env` files or secrets.
