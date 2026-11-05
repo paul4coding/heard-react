@@ -11,9 +11,9 @@ const NEXT = { 0: [1], 1: [2], 2: [3], 3: [4, 2], 4: [] };
 const REOPEN = 'Reopen (back to In progress)';
 const MAX_RESOLUTION_PICTURES = 5;
 
-const statusLabel = (from, to, hasReview) => {
+const statusLabel = (from, to, canClose) => {
   if (from === 3 && to === 2) return REOPEN;
-  if (to === 4 && !hasReview) return 'Closed (waiting for the student’s review)';
+  if (to === 4 && !canClose) return 'Closed (waiting for the student’s review, or 3 days)';
   return STAGES[to];
 };
 
@@ -227,10 +227,10 @@ function AdminForm({ c, coordinators, onAction }) {
           <span><b>Rejected by a coordinator.</b> {c.rejectionReason && <em>“{c.rejectionReason}”</em>} Send it to another coordinator below.</span>
         </div>
       )}
-      {c.stage === 3 && !c.review && (
+      {c.stage === 3 && !c.canClose && (
         <div className="banner">
           <Icon name="info" />
-          <span>Waiting for the student to say if they are satisfied. You can close the complaint after that.</span>
+          <span>Waiting for the student to say if they are satisfied. You can close the complaint after their answer, or once it has been resolved for 3 days.</span>
         </div>
       )}
       {canAssign && (
@@ -255,7 +255,7 @@ function AdminForm({ c, coordinators, onAction }) {
           <select className="input" value={stage} onChange={(e) => setStage(+e.target.value)}>
             <option value={c.stage}>{STAGES[c.stage]} (current)</option>
             {options.map((i) => (
-              <option key={i} value={i} disabled={i === 4 && !c.review}>{statusLabel(c.stage, i, !!c.review)}</option>
+              <option key={i} value={i} disabled={i === 4 && !c.canClose}>{statusLabel(c.stage, i, c.canClose)}</option>
             ))}
           </select>
         </label>
@@ -290,7 +290,7 @@ export default function Drawer({ complaint: c, role, userId, coordinators, open,
   let body = null;
   if (c) {
     const isStudent = role === 'student';
-    const formKey = `${c.id}-${c.log.length}-${c.stage}-${c.assigneeId}-${c.priority}-${!!c.review}-${c.rejected}`;
+    const formKey = `${c.id}-${c.log.length}-${c.stage}-${c.assigneeId}-${c.priority}-${!!c.review}-${c.rejected}-${c.canClose}`;
     let action;
     if (role === 'admin') action = <AdminForm key={formKey} c={c} coordinators={coordinators} onAction={onAction} />;
     else if (role === 'coordinator') action = <CoordinatorForm key={formKey} c={c} onAction={onAction} />;

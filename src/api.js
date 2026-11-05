@@ -121,6 +121,7 @@ export function toComplaint(c) {
     assignmentSource: c.assignment_source ?? null, // AUTO (par catégorie, rejetable) ou ADMIN
     rejected: !!c.is_rejected,                      // rejetée, en attente de réaffectation
     rejectionReason: c.rejections?.length ? c.rejections[c.rejections.length - 1].reason : null,
+    canClose: !!c.can_close, // avis de l'étudiant reçu, ou 3 jours écoulés depuis la résolution
     review: c.review ? { satisfied: c.review.satisfied, comment: c.review.comment } : null,
     log: [...history, ...rejections, ...comments].sort((a, b) => a.t - b.t),
   };

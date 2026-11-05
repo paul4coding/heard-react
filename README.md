@@ -9,7 +9,7 @@ React + Vite single-page app for lodging and following student complaints. It ta
 - **Public landing page** and sign-in with **email and password** (accounts are created by an administrator).
 - **Student**: lodge a complaint (**category**, title, description and one optional photo). The category decides which coordinator receives it. Follow its progress, exchange messages, see the pictures of the resolution, and say **satisfied or not satisfied** when it is resolved (an administrator can close it only after that).
 - **Coordinator**: work through complaints routed to their category (In progress, Resolved with a note and up to 5 pictures), **reject** a complaint wrongly assigned to them (with a reason; it goes back to the administrator), message the student, and see the **report** of their own department.
-- **Administrator**: **user management** (create, edit, deactivate and reactivate student, coordinator and administrator accounts, reset passwords), dashboard with live statistics, see and reassign **rejected complaints**, assign complaints (a complaint assigned or reassigned by an administrator cannot be rejected), resolve with pictures, close (after the student's review) or reopen, comment, and generate **reports** (all departments, CSV export).
+- **Administrator**: **user management** (create, edit, deactivate and reactivate student, coordinator and administrator accounts, reset passwords), dashboard with live statistics, see and reassign **rejected complaints**, assign complaints (a complaint assigned or reassigned by an administrator cannot be rejected), resolve with pictures, close (after the student's review, or after 3 days without a review) or reopen, comment, and generate **reports** (all departments, CSV export).
 - **Photo**: one optional image (PNG, JPEG, GIF or WebP, 10 MB) with drag and drop, preview, a full-screen viewer, and type/size checks before sending. Everyone who can open the complaint can view it.
 - **Server-side pagination** (20 per page), search by title or reference, and status filters on every list.
 - Exact counters from the API, silent refresh on navigation and after every change.
@@ -59,7 +59,7 @@ src/
 | Assign / reassign | | | ✅ |
 | Set In progress / Resolved (with pictures) | | ✅ | ✅ |
 | Satisfied / not satisfied | ✅ (when resolved) | | |
-| Close / reopen | | | ✅ (close needs the student's review) |
+| Close / reopen | | | ✅ (close needs the student's review, or 3 days after the resolution) |
 | Reports | | their department | all |
 | Comment | ✅ | ✅ | ✅ |
 
