@@ -10,8 +10,9 @@ const Loading = () => <div className="panel empty"><b>Loading…</b></div>;
 export function StudentOverview({ data, name, onOpen, onNew, onAll }) {
   if (!data) return <Loading />;
   const { stats, items } = data;
+  const toReview = items.filter((c) => c.stage === 3 && !c.review);   // résolues : l'étudiant doit donner son avis
   const active = items.filter((c) => c.stage < 3);
-  const done = items.filter((c) => c.stage >= 3);
+  const done = items.filter((c) => c.stage >= 3 && !(c.stage === 3 && !c.review));
   const openCount = count(stats, 'SUBMITTED', 'ASSIGNED', 'IN_PROGRESS');
   const truncated = stats.total > items.length;
 
@@ -24,6 +25,12 @@ export function StudentOverview({ data, name, onOpen, onNew, onAll }) {
         </div>
         <button className="btn lg" onClick={onNew}><Icon name="plus" />Lodge a complaint</button>
       </section>
+      {toReview.length > 0 && (
+        <>
+          <SecHead title="Waiting for your opinion" note="Say if the resolution satisfies you" />
+          <div className="panel pad"><QList list={toReview} empty="" onOpen={onOpen} /></div>
+        </>
+      )}
       <SecHead title="Open complaints" note="Select one to see every update" />
       {active.length ? (
         <div className="cards">
@@ -52,8 +59,7 @@ export function StudentOverview({ data, name, onOpen, onNew, onAll }) {
 
 export function AdminOverview({ data, onOpen, onAll }) {
   if (!data) return <Loading />;
-  const { stats, unassigned } = data;
-  // Release 1 : sans catégorie tant que l'administrateur n'a pas catégorisé (sprint 3) -> pas de graphique vide
+  const { stats, unassigned, rejected } = data;
   const entries = SHOW_CATEGORIES ? Object.entries(stats?.by_category ?? {}).filter(([k]) => k !== 'Uncategorized') : [];
   const max = Math.max(...entries.map(([, n]) => n), 1);
 
@@ -65,6 +71,12 @@ export function AdminOverview({ data, onOpen, onAll }) {
         [count(stats, 'RESOLVED'), 'Resolved, to close'],
         [count(stats, 'CLOSED'), 'Closed'],
       ]} />
+      {rejected?.total > 0 && (
+        <>
+          <SecHead title="Rejected by coordinators" note={`${rejected.total} to reassign`} />
+          <div className="panel pad"><QList list={rejected.items} empty="" onOpen={onOpen} /></div>
+        </>
+      )}
       <SecHead title="Needs a decision" note={`${unassigned.total} waiting for assignment`} />
       <div className={`two${entries.length ? '' : ' one'}`}>
         <div className="panel pad">

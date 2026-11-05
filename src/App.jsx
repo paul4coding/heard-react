@@ -6,6 +6,7 @@ import Landing from './components/Landing.jsx';
 import Toast from './components/Toast.jsx';
 import ComplaintList from './views/ComplaintList.jsx';
 import UsersView from './views/UsersView.jsx';
+import Reports from './views/Reports.jsx';
 import NewComplaint, { ComplaintSuccess } from './views/NewComplaint.jsx';
 import { StudentOverview, AdminOverview, CoordinatorOverview } from './views/Overviews.jsx';
 import { STATUSES } from './data.js';
@@ -72,11 +73,14 @@ export default function App() {
   const loadOverview = useCallback(async (u) => {
     try {
       if (u.role === 'admin') {
-        const [stats, unassigned] = await Promise.all([
+        const [stats, unassigned, rejected] = await Promise.all([
           api.getStats(),
           api.listComplaints('admin', { unassigned: true, limit: 20 }),
+          api.listComplaints('admin', { rejected: true, limit: 20 }),
         ]);
-        setOverview({ stats, unassigned });
+        // « Unassigned » = en attente d'affectation : les plaintes rejetées ont leur propre bloc
+        const waiting = { total: unassigned.total - rejected.total, items: unassigned.items.filter((c) => !c.rejected) };
+        setOverview({ stats, unassigned: waiting, rejected });
       } else {
         const [stats, { items }] = await Promise.all([
           api.getMyStats(u.role),
@@ -91,7 +95,7 @@ export default function App() {
 
   const loadStatic = useCallback(async (u) => {
     try {
-      if (u.role === 'admin') setCoordinators((await api.listCoordinators()).map(api.toUser));
+      if (u.role === 'admin') setCoordinators(await api.listCoordinators());
     } catch (e) {
       fail(e);
     }
@@ -137,7 +141,7 @@ export default function App() {
     setOpen(true);
     setDetailLoading(true);
     // Liste des coordinateurs à jour (un compte a pu être créé ou désactivé depuis l'écran Users)
-    if (role === 'admin') api.listCoordinators().then((rows) => setCoordinators(rows.map(api.toUser))).catch(() => {});
+    if (role === 'admin') api.listCoordinators().then(setCoordinators).catch(() => {});
     try {
       const full = await api.getComplaint(role, c.id);
       setSelected((cur) => (cur && cur.id === c.id ? full : cur));
@@ -204,11 +208,19 @@ export default function App() {
       let c = null;
       if (a.kind === 'comment') {
         c = await api.addComment(role, id, a.note);
+      } else if (a.kind === 'review') {
+        c = await api.reviewComplaint(id, a.satisfied, a.comment);
+      } else if (a.kind === 'reject') {
+        c = await api.rejectComplaint(id, a.reason);
+        setOpen(false); // la plainte n'est plus la sienne : on ferme le tiroir
+        notify('Complaint sent back to the administrator');
+        keep(c);
+        return null;
       } else {
         if (a.assign) c = await api.assign(id, a.assign.coordinatorId, a.assign.priority);
         else if (a.priority) c = await api.setPriority(id, a.priority);
         if (a.stage === 3 && a.note) {
-          c = await api.addComment(role, id, a.note, true); // la résolution passe la plainte en RESOLVED
+          c = await api.postResolution(role, id, a.note, a.files || []); // message + images, la plainte passe en RESOLVED
         } else {
           // Le backend refuse les messages sur une plainte clôturée : on poste donc la note avant le changement de statut
           if (a.note) c = await api.addComment(role, id, a.note);
@@ -216,7 +228,7 @@ export default function App() {
         }
       }
       if (c) keep(c);
-      notify(a.kind === 'comment' ? 'Message sent' : 'Update saved');
+      notify(a.kind === 'comment' ? 'Message sent' : a.kind === 'review' ? 'Thank you for your answer' : 'Update saved');
       return null;
     } catch (e) {
       // Une étape a pu réussir avant l'échec : on resynchronise la plainte
@@ -259,6 +271,10 @@ export default function App() {
       break;
     case 'coordinator.overview':
       content = <CoordinatorOverview {...props} />;
+      break;
+    case 'admin.reports':
+    case 'coordinator.reports':
+      content = <Reports key={`${role}.reports`} role={role} onError={fail} />;
       break;
     case 'admin.users':
       content = <UsersView key="users" me={user} onNotify={notify} onError={fail} />;

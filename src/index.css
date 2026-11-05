@@ -400,3 +400,24 @@ html{scroll-behavior:smooth}
 .confirm-box b{display:block;color:var(--bad)}
 .confirm-box p{color:var(--ink-2);font-size:14px;margin:4px 0 12px}
 .confirm-acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+
+/* Sprint 2: review, rejection, reports */
+.hint{color:var(--ink-3);font-size:13.5px;margin:4px 0 14px}
+.review-btns{display:flex;gap:10px;flex-wrap:wrap}
+.review-btns .btn{flex:1;min-width:130px}
+.review-done{display:flex;gap:10px;align-items:flex-start;border-radius:12px;padding:12px 14px;font-size:14px}
+.review-done.ok{background:var(--ok-soft);color:var(--ok)}
+.review-done.no{background:var(--warn-soft);color:var(--warn)}
+.review-done span{color:var(--ink-2)}
+.review-done b{display:block;color:inherit}
+.review-done em{display:block;font-style:normal;margin-top:2px}
+.banner{display:flex;gap:10px;align-items:flex-start;background:var(--info-soft);color:var(--info);border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:14px}
+.banner span{color:var(--ink-2)}
+.banner b{color:var(--ink)}
+.banner em{font-style:normal}
+.banner.warn{background:var(--warn-soft);color:var(--warn)}
+.tag-warn{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:99px;background:var(--warn-soft);color:var(--warn);font-size:12px;font-weight:600}
+.report-form{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px}
+.report-form .field{margin-bottom:0}
+.report-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:640px){.report-form{align-items:stretch}.report-form .field{flex:1 1 140px}}

@@ -10,7 +10,7 @@ const HEADS = {
   admin: ['Complaint', 'Category', 'From', 'Status', 'Priority', 'Assigned to', 'Submitted'],
   coordinator: ['Complaint', 'Category', 'From', 'Status', 'Priority', 'Submitted'],
 };
-// Release 1 : les plaintes ne sont pas encore catégorisées (l'administrateur le fera au sprint 3) -> pas de colonne vide
+// Sprint 2 : la catégorie est choisie par l'étudiant, la colonne est toujours affichée
 // Priorité : masquée jusqu'au sprint 4 (voir SHOW_PRIORITY)
 const headsFor = (role, showCat) => HEADS[role].filter((h) => (showCat || h !== 'Category') && (SHOW_PRIORITY || h !== 'Priority'));
 
@@ -45,7 +45,8 @@ export default function ComplaintList({ role, refreshKey, onOpen, onError }) {
     const id = ++seq.current; // ignore les réponses obsolètes (changement rapide de page / filtre)
     setLoading(true);
     listComplaints(role, {
-      status: filter === 'all' ? undefined : STATUSES[filter], q: query, skip: page * PAGE_SIZE,
+      status: filter === 'all' || filter === 'rejected' ? undefined : STATUSES[filter], q: query, skip: page * PAGE_SIZE,
+      rejected: filter === 'rejected',
     })
       .then(({ items, total: t }) => {
         if (id !== seq.current) return;
@@ -68,7 +69,7 @@ export default function ComplaintList({ role, refreshKey, onOpen, onError }) {
   const changeFilter = (f) => { setFilter(f); setPage(0); };
   const reset = () => { setInput(''); setQuery(''); setFilter('all'); setPage(0); };
 
-  const showCat = rows.some((c) => c.cat);
+  const showCat = true;
 
   const cells = (c) => (
     <>
@@ -79,6 +80,7 @@ export default function ComplaintList({ role, refreshKey, onOpen, onError }) {
           <Mini stage={c.stage} />
           <span className="sr">{STAGES[c.stage]}</span>{' '}
           <span style={{ fontSize: '12.5px', color: 'var(--ink-3)' }}>{STAGES[c.stage]}</span>
+          {c.stage === 3 && !c.review && <span className="tag-warn">Your review is needed</span>}
         </td>
       )}
       {role !== 'student' && <td className="muted">{c.owner}</td>}
@@ -86,7 +88,7 @@ export default function ComplaintList({ role, refreshKey, onOpen, onError }) {
       {SHOW_PRIORITY && role !== 'student' && <td><Priority value={c.priority} /></td>}
       {role === 'admin' && (
         <td className="muted">
-          {c.assignee ? c.assignee : <span style={{ color: 'var(--bad)', fontWeight: 600 }}>Unassigned</span>}
+          {c.assignee ? c.assignee : <span style={{ color: 'var(--bad)', fontWeight: 600 }}>{c.rejected ? 'Rejected' : 'Unassigned'}</span>}
         </td>
       )}
       <td className="muted">{c.date}</td>
@@ -104,9 +106,9 @@ export default function ComplaintList({ role, refreshKey, onOpen, onError }) {
           <input className="input" type="search" placeholder="Search by title or reference" value={input} onChange={(e) => setInput(e.target.value)} />
         </label>
         <div className="chips" role="group" aria-label="Filter by status">
-          {['all', ...STAGES.map((_, i) => i)].map((f) => (
+          {['all', ...STAGES.map((_, i) => i), ...(role === 'admin' ? ['rejected'] : [])].map((f) => (
             <button key={f} className="chip" aria-pressed={filter === f} onClick={() => changeFilter(f)}>
-              {f === 'all' ? 'All' : STAGES[f]}
+              {f === 'all' ? 'All' : f === 'rejected' ? 'Rejected' : STAGES[f]}
             </button>
           ))}
         </div>

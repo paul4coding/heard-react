@@ -84,19 +84,29 @@ export function toComplaint(c) {
     st: STAGES[STATUSES.indexOf(h.new_status)],
     when: fmtWhen(h.changed_at),
     note: h.old_status ? `Changed by ${userName(h.changed_by)}.` : 'Complaint received.',
+    pictures: [],
   }));
   const comments = (c.comments || []).map((m) => ({
     t: utc(m.created_at).getTime(),
     st: m.is_resolution ? 'Resolution' : `Message from ${userName(m.author)}`,
     when: fmtWhen(m.created_at),
     note: m.message,
+    commentId: m.id,
+    pictures: (m.attachments || []).map((a) => ({ id: a.id, name: a.filename, type: a.content_type, size: a.size })),
+  }));
+  const rejections = (c.rejections || []).map((r) => ({
+    t: utc(r.created_at).getTime(),
+    st: `Rejected by ${userName(r.coordinator)}`,
+    when: fmtWhen(r.created_at),
+    note: r.reason,
+    pictures: [],
   }));
   return {
     id: c.id,
     ref: c.reference,
     title: c.title,
     desc: c.description,
-    cat: SHOW_CATEGORIES ? c.category?.name ?? null : null, // masquée jusqu'au sprint 3 (voir SHOW_CATEGORIES)
+    cat: SHOW_CATEGORIES ? c.category?.name ?? null : null,
     stage,
     status: c.status,
     priority: c.priority,
@@ -108,7 +118,11 @@ export function toComplaint(c) {
     attachments: (c.attachments || []).map((a) => ({
       id: a.id, name: a.filename, type: a.content_type, size: a.size, uploaderId: a.uploaded_by_id,
     })),
-    log: [...history, ...comments].sort((a, b) => a.t - b.t),
+    assignmentSource: c.assignment_source ?? null, // AUTO (par catégorie, rejetable) ou ADMIN
+    rejected: !!c.is_rejected,                      // rejetée, en attente de réaffectation
+    rejectionReason: c.rejections?.length ? c.rejections[c.rejections.length - 1].reason : null,
+    review: c.review ? { satisfied: c.review.satisfied, comment: c.review.comment } : null,
+    log: [...history, ...rejections, ...comments].sort((a, b) => a.t - b.t),
   };
 }
 
@@ -116,11 +130,12 @@ export function toComplaint(c) {
 export const PAGE_SIZE = 20;
 
 // Liste paginée côté serveur : { items, total } (le total vient de l'en-tête X-Total-Count)
-export async function listComplaints(role, { status, q, skip = 0, limit = PAGE_SIZE, unassigned } = {}) {
+export async function listComplaints(role, { status, q, skip = 0, limit = PAGE_SIZE, unassigned, rejected } = {}) {
   const p = new URLSearchParams({ skip, limit });
   if (status) p.set('status', status);
   if (q) p.set('q', q);
   if (unassigned) p.set('unassigned', 'true');
+  if (rejected) p.set('rejected', 'true');
   const { data, headers } = await request(`${PREFIX[role.toUpperCase()]}/complaints?${p}`, { withHeaders: true });
   return { items: data.map(toComplaint), total: Number(headers.get('X-Total-Count') ?? data.length) };
 }
@@ -151,6 +166,62 @@ export async function setStatus(role, id, status) {
 }
 
 export const listCategories = () => request('/api/student/categories');
+
+/* ---------- Sprint 2 : rejet, résolution avec images, avis de l'étudiant, rapports ---------- */
+export async function rejectComplaint(id, reason) {
+  return toComplaint(await request(`/api/coordinator/complaints/${id}/reject`, { method: 'POST', json: { reason } }));
+}
+
+// Résolution (coordinateur ou administrateur) : message + 0 à 5 images, tout ou rien côté serveur
+export async function postResolution(role, id, message, files = []) {
+  const fd = new FormData();
+  fd.append('message', message);
+  files.forEach((f) => fd.append('files', f));
+  return toComplaint(await request(`${PREFIX[role.toUpperCase()]}/complaints/${id}/resolution`, { method: 'POST', formData: fd }));
+}
+
+export async function reviewComplaint(id, satisfied, comment = '') {
+  return toComplaint(await request(`/api/student/complaints/${id}/review`, { method: 'POST', json: { satisfied, comment } }));
+}
+
+export function getReport(role, { dateFrom, dateTo } = {}) {
+  const p = new URLSearchParams();
+  if (dateFrom) p.set('date_from', dateFrom);
+  if (dateTo) p.set('date_to', dateTo);
+  return request(`${PREFIX[role.toUpperCase()]}/reports/summary?${p}`);
+}
+
+// Fichier protégé par le jeton : on le télécharge avec l'en-tête Authorization
+async function fetchBlob(path) {
+  let res;
+  try {
+    res = await fetch(BASE + path, { headers: { Authorization: `Bearer ${getToken()}` } });
+  } catch {
+    throw new ApiError('Cannot reach the server. Is the API running?', 0);
+  }
+  if (!res.ok) throw new ApiError(`Could not load the file (${res.status})`, res.status);
+  return res.blob();
+}
+
+export async function fetchCommentPictureUrl(role, id, commentId, attachmentId) {
+  const blob = await fetchBlob(`${PREFIX[role.toUpperCase()]}/complaints/${id}/comments/${commentId}/attachments/${attachmentId}`);
+  return URL.createObjectURL(blob);
+}
+
+export async function downloadReportCsv(role, { dateFrom, dateTo } = {}) {
+  const p = new URLSearchParams();
+  if (dateFrom) p.set('date_from', dateFrom);
+  if (dateTo) p.set('date_to', dateTo);
+  const blob = await fetchBlob(`${PREFIX[role.toUpperCase()]}/reports/complaints.csv?${p}`);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'complaints-report.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 /* ---------- Pièces jointes ---------- */
 export async function uploadAttachments(id, files) {
@@ -190,7 +261,15 @@ export async function setPriority(id, priority) {
   return toComplaint(await request(`/api/admin/complaints/${id}/priority`, { method: 'PATCH', json: { priority } }));
 }
 
-export const listCoordinators = () => request('/api/admin/users?role=COORDINATOR&is_active=true&limit=200');
+// Coordinateurs actifs, avec la catégorie dont ils ont la charge (affichée à la place de l'ancien « département »)
+export async function listCoordinators() {
+  const [users, categories] = await Promise.all([
+    request('/api/admin/users?role=COORDINATOR&is_active=true&limit=200'),
+    request('/api/admin/categories').catch(() => []),
+  ]);
+  const byCoordinator = new Map(categories.filter((c) => c.coordinator).map((c) => [c.coordinator.id, c.name]));
+  return users.map((u) => ({ ...toUser(u), department: byCoordinator.get(u.id) ?? 'no category' }));
+}
 
 /* ---------- Gestion des comptes (admin) ---------- */
 const toManagedUser = (u) => ({

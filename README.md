@@ -7,9 +7,9 @@ React + Vite single-page app for lodging and following student complaints. It ta
 
 ## Features
 - **Public landing page** and sign-in with **email and password** (accounts are created by an administrator).
-- **Student**: lodge a complaint (title, description and one optional photo; no category: the administrator will categorize complaints in Sprint 3), follow its progress, exchange messages, add or replace the photo while the complaint is open.
-- **Coordinator**: work through assigned complaints (In progress, Resolved with a resolution note) and message the student.
-- **Administrator**: **user management** (create, edit, deactivate and reactivate student, coordinator and administrator accounts, reset passwords), dashboard with live statistics, assign complaints to coordinators, set priority, close or reopen, comment.
+- **Student**: lodge a complaint (**category**, title, description and one optional photo). The category decides which coordinator receives it. Follow its progress, exchange messages, see the pictures of the resolution, and say **satisfied or not satisfied** when it is resolved (an administrator can close it only after that).
+- **Coordinator**: work through complaints routed to their category (In progress, Resolved with a note and up to 5 pictures), **reject** a complaint wrongly assigned to them (with a reason; it goes back to the administrator), message the student, and see the **report** of their own department.
+- **Administrator**: **user management** (create, edit, deactivate and reactivate student, coordinator and administrator accounts, reset passwords), dashboard with live statistics, see and reassign **rejected complaints**, assign complaints (a complaint assigned or reassigned by an administrator cannot be rejected), resolve with pictures, close (after the student's review) or reopen, comment, and generate **reports** (all departments, CSV export).
 - **Photo**: one optional image (PNG, JPEG, GIF or WebP, 10 MB) with drag and drop, preview, a full-screen viewer, and type/size checks before sending. Everyone who can open the complaint can view it.
 - **Server-side pagination** (20 per page), search by title or reference, and status filters on every list.
 - Exact counters from the API, silent refresh on navigation and after every change.
@@ -54,13 +54,17 @@ src/
 |---|---|---|---|
 | Lodge a complaint | ✅ | | |
 | See | their own | assigned to them | all |
-| Assign / set priority | | | ✅ |
-| Set In progress / Resolved | | ✅ | ✅ |
-| Close / reopen | | | ✅ |
+| Choose the category | ✅ | | |
+| Reject a wrongly assigned complaint | | ✅ (only if routed by category) | |
+| Assign / reassign | | | ✅ |
+| Set In progress / Resolved (with pictures) | | ✅ | ✅ |
+| Satisfied / not satisfied | ✅ (when resolved) | | |
+| Close / reopen | | | ✅ (close needs the student's review) |
+| Reports | | their department | all |
 | Comment | ✅ | ✅ | ✅ |
 
 ## Notes
-- **Categories are hidden** until Sprint 3 (story 6: the administrator categorizes complaints), even for old complaints that have one. The switch is `SHOW_CATEGORIES` in `src/data.js` (set it to `true` and add the admin action in Sprint 3).
+- **Sprint 2**: categories are shown everywhere (`SHOW_CATEGORIES = true`). The 7 categories and their coordinators come from the backend (`python -m scripts.seed_categories`); an existing database first needs `python -m scripts.migrate_sprint2`.
 - **Priority is hidden** until Sprint 4 (story 13: the administrator assigns priority levels). The switch is `SHOW_PRIORITY` in `src/data.js`; the API already supports it.
 - The API has no public registration, anonymous complaints or ratings, so the UI does not offer them.
 - Never commit `.env` files or secrets.

@@ -5,7 +5,7 @@ import { ACCEPT, MAX_MB, checkFile, formatSize } from '../utils.js';
 // Zone de dépôt + aperçu d'image. Garde sa propre liste ; le parent reçoit un tableau de File via onChange.
 // Pour la vider (après un envoi), le parent change la `key` du composant.
 // Sprint 1 : une seule image facultative par plainte (capacity = 1).
-export default function FilePicker({ capacity, onChange, disabled = false }) {
+export default function FilePicker({ capacity, onChange, disabled = false, noun = 'photo' }) {
   const [items, setItems] = useState([]);
   const [err, setErr] = useState('');
   const [over, setOver] = useState(false);
@@ -27,7 +27,7 @@ export default function FilePicker({ capacity, onChange, disabled = false }) {
     [...list].forEach((file) => {
       const bad = checkFile(file);
       if (bad) msg = bad;
-      else if (next.length >= capacity) msg = capacity === 1 ? 'Only one photo can be attached. Remove it to choose another.' : `You can attach up to ${capacity} photos.`;
+      else if (next.length >= capacity) msg = capacity === 1 ? `Only one ${noun} can be attached. Remove it to choose another.` : `You can attach up to ${capacity} ${noun}s.`;
       else next.push({ file, url: URL.createObjectURL(file), key: `${file.name}-${file.size}-${file.lastModified}-${next.length}` });
     });
     setErr(msg);
@@ -50,9 +50,9 @@ export default function FilePicker({ capacity, onChange, disabled = false }) {
         onDrop={(e) => { e.preventDefault(); setOver(false); add(e.dataTransfer.files); }}
       >
         <div className="ic"><Icon name="upload" /></div>
-        <b>Drag a photo here</b>
+        <b>{capacity > 1 ? `Drag ${noun}s here` : `Drag a ${noun} here`}</b>
         <p>PNG, JPEG, GIF or WebP, up to {MAX_MB} MB</p>
-        <button type="button" className="btn" disabled={disabled || items.length >= capacity} onClick={() => input.current.click()}>Choose a photo</button>
+        <button type="button" className="btn" disabled={disabled || items.length >= capacity} onClick={() => input.current.click()}>{capacity > 1 ? `Choose ${noun}s` : `Choose a ${noun}`}</button>
         <input ref={input} type="file" accept={ACCEPT} multiple={capacity > 1} hidden data-testid="file-input"
           onChange={(e) => { add(e.target.files); e.target.value = ''; }} />
       </div>
@@ -61,7 +61,7 @@ export default function FilePicker({ capacity, onChange, disabled = false }) {
           {items.map((i, idx) => (
             <div className="pv" key={i.key}>
               <img src={i.url} alt={i.file.name} />
-              <span className="tag">Photo · {formatSize(i.file.size)}</span>
+              <span className="tag">{noun.charAt(0).toUpperCase() + noun.slice(1)} · {formatSize(i.file.size)}</span>
               <button type="button" className="x" aria-label={`Remove ${i.file.name}`} onClick={() => remove(idx)}><Icon name="x" /></button>
             </div>
           ))}

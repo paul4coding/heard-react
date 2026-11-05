@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import FilePicker from './FilePicker.jsx';
 import Icon from './Icon.jsx';
-import { fetchAttachmentUrl } from '../api.js';
+import { fetchAttachmentUrl, fetchCommentPictureUrl } from '../api.js';
 import { MAX_FILES, formatSize } from '../utils.js';
 
 // Visionneuse plein écran. Échap ferme la visionneuse seulement, pas le tiroir.
@@ -28,7 +28,7 @@ function Lightbox({ url, att, onClose }) {
   );
 }
 
-function Thumb({ role, complaintId, att, canDelete, onView, onDelete }) {
+export function Thumb({ load, att, canDelete, onView, onDelete }) {
   const [url, setUrl] = useState(null);
   const [failed, setFailed] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -37,7 +37,7 @@ function Thumb({ role, complaintId, att, canDelete, onView, onDelete }) {
   // L'endpoint exige le jeton : on récupère l'image avec l'en-tête Authorization
   useEffect(() => {
     let alive = true;
-    fetchAttachmentUrl(role, complaintId, att.id)
+    load()
       .then((u) => {
         if (!alive) return URL.revokeObjectURL(u);
         urlRef.current = u;
@@ -66,6 +66,23 @@ function Thumb({ role, complaintId, att, canDelete, onView, onDelete }) {
         </button>
       )}
     </div>
+  );
+}
+
+// Images jointes à un commentaire de résolution (sprint 2, story 11)
+export function CommentPictures({ role, complaintId, commentId, pictures }) {
+  const [view, setView] = useState(null);
+  if (!pictures?.length) return null;
+  return (
+    <>
+      <div className="att-grid" style={{ marginTop: 8 }}>
+        {pictures.map((a) => (
+          <Thumb key={a.id} load={() => fetchCommentPictureUrl(role, complaintId, commentId, a.id)} att={a}
+            onView={(url, att) => setView({ url, att })} />
+        ))}
+      </div>
+      {view && <Lightbox url={view.url} att={view.att} onClose={() => setView(null)} />}
+    </>
   );
 }
 
@@ -98,7 +115,7 @@ export default function Attachments({ complaint: c, role, userId, onUpload, onDe
       {c.attachments.length > 0 && (
         <div className="att-grid">
           {c.attachments.map((a) => (
-            <Thumb key={a.id} role={role} complaintId={c.id} att={a}
+            <Thumb key={a.id} load={() => fetchAttachmentUrl(role, c.id, a.id)} att={a}
               canDelete={isOwner && !closed && a.uploaderId === userId}
               onView={(url, att) => setView({ url, att })} onDelete={onDelete} />
           ))}
