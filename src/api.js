@@ -261,6 +261,10 @@ export async function setPriority(id, priority) {
   return toComplaint(await request(`/api/admin/complaints/${id}/priority`, { method: 'PATCH', json: { priority } }));
 }
 
+export const listAdminCategories = () => request('/api/admin/categories');
+export const setCategoryCoordinator = (id, coordinatorId) =>
+  request(`/api/admin/categories/${id}`, { method: 'PATCH', json: { coordinator_id: coordinatorId } });
+
 // Coordinateurs actifs, avec la catégorie dont ils ont la charge (affichée à la place de l'ancien « département »)
 export async function listCoordinators() {
   const [users, categories] = await Promise.all([
@@ -268,7 +272,7 @@ export async function listCoordinators() {
     request('/api/admin/categories').catch(() => []),
   ]);
   const byCoordinator = new Map(categories.filter((c) => c.coordinator).map((c) => [c.coordinator.id, c.name]));
-  return users.map((u) => ({ ...toUser(u), department: byCoordinator.get(u.id) ?? 'no category' }));
+  return users.map((u) => ({ ...toUser(u), email: u.email, department: byCoordinator.get(u.id) ?? 'no category' }));
 }
 
 /* ---------- Gestion des comptes (admin) ---------- */

@@ -7,6 +7,7 @@ import Toast from './components/Toast.jsx';
 import ComplaintList from './views/ComplaintList.jsx';
 import UsersView from './views/UsersView.jsx';
 import Reports from './views/Reports.jsx';
+import Categories from './views/Categories.jsx';
 import NewComplaint, { ComplaintSuccess } from './views/NewComplaint.jsx';
 import { StudentOverview, AdminOverview, CoordinatorOverview } from './views/Overviews.jsx';
 import { STATUSES } from './data.js';
@@ -275,6 +276,9 @@ export default function App() {
     case 'admin.reports':
     case 'coordinator.reports':
       content = <Reports key={`${role}.reports`} role={role} onError={fail} />;
+      break;
+    case 'admin.categories':
+      content = <Categories key="categories" onNotify={notify} onError={fail} />;
       break;
     case 'admin.users':
       content = <UsersView key="users" me={user} onNotify={notify} onError={fail} />;
