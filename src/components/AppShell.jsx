@@ -3,7 +3,7 @@ import Logo from './Logo.jsx';
 import { NAV, TITLES, ROLE_LABEL } from '../data.js';
 import { initials } from '../utils.js';
 
-export default function AppShell({ role, user, view, dark, onNav, onTheme, onLogout, children }) {
+export default function AppShell({ role, user, view, dark, badges = {}, bell = null, onNav, onTheme, onLogout, children }) {
   const [h, p] = TITLES[role][view];
 
   return (
@@ -14,6 +14,7 @@ export default function AppShell({ role, user, view, dark, onNav, onTheme, onLog
           {NAV[role].map(([k, label, icon]) => (
             <button key={k} aria-current={view === k ? 'page' : undefined} onClick={() => onNav(k)}>
               <Icon name={icon} />{label}
+              {badges[k] > 0 && <span className="nav-badge" aria-label={`${badges[k]} need your action`}>{badges[k]}</span>}
             </button>
           ))}
         </nav>
@@ -27,6 +28,7 @@ export default function AppShell({ role, user, view, dark, onNav, onTheme, onLog
         <header className="topbar">
           <div><h1>{h}</h1><p>{p}</p></div>
           <div className="tools">
+            {bell}
             <button className="icon-btn" onClick={onTheme} aria-label={`Switch to ${dark ? 'light' : 'dark'} mode`}>
               <Icon name={dark ? 'sun' : 'moon'} />
             </button>

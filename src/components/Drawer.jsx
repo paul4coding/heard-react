@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Attachments, { CommentPictures } from './Attachments.jsx';
 import FilePicker from './FilePicker.jsx';
+import Investigation from './Investigation.jsx';
 import Icon from './Icon.jsx';
 import { Pill, Tracker } from './Status.jsx';
 import { Priority } from '../views/ComplaintList.jsx';
@@ -268,7 +269,7 @@ function AdminForm({ c, coordinators, onAction }) {
   );
 }
 
-export default function Drawer({ complaint: c, role, userId, coordinators, open, loading, onClose, onAction, onUpload, onDeleteAttachment }) {
+export default function Drawer({ complaint: c, role, userId, coordinators, open, loading, onClose, onAction, onUpload, onDeleteAttachment, onNotify, onError }) {
   const ref = useRef(null);
   const closeBtn = useRef(null);
 
@@ -315,6 +316,7 @@ export default function Drawer({ complaint: c, role, userId, coordinators, open,
         <div className="dsec"><h3>Description</h3><p>{c.desc}</p></div>
         <Attachments key={`${c.id}-${c.attachments.length}`} complaint={c} role={role} userId={userId}
           onUpload={onUpload} onDelete={onDeleteAttachment} />
+        {!isStudent && c.stage >= 1 && <Investigation key={`inv-${c.id}`} role={role} complaint={c} onNotify={onNotify} onError={onError} />}
         {action}
         <div className="dsec">
           <h3>Updates</h3>

@@ -4,6 +4,11 @@ import AppShell from './components/AppShell.jsx';
 import Drawer from './components/Drawer.jsx';
 import Landing from './components/Landing.jsx';
 import Toast from './components/Toast.jsx';
+import LiabilityDrawer from './components/LiabilityDrawer.jsx';
+import Notifications from './components/Notifications.jsx';
+import Emails from './views/Emails.jsx';
+import Invoices from './views/Invoices.jsx';
+import Responsibility from './views/Responsibility.jsx';
 import ComplaintList from './views/ComplaintList.jsx';
 import UsersView from './views/UsersView.jsx';
 import Reports from './views/Reports.jsx';
@@ -31,6 +36,9 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [screen, setScreen] = useState('landing');
   const toastTimer = useRef(null);
+  const [liabilityId, setLiabilityId] = useState(null); // dossier d'enquête ouvert (étudiant désigné)
+  const [pending, setPending] = useState(0); // enquêtes qui attendent une action de l'étudiant (ou de l'administrateur : factures)
+  const deepLink = useRef(new URLSearchParams(window.location.search).get('liability')); // lien reçu par email
 
   const role = user?.role;
   const dark = theme ? theme === 'dark' : systemDark();
@@ -54,6 +62,8 @@ export default function App() {
     setOpen(false);
     setSelected(null);
     setLastNew(null);
+    setLiabilityId(null);
+    setPending(0);
     setView('overview');
     setScreen('landing');
     window.scrollTo(0, 0);
@@ -94,6 +104,17 @@ export default function App() {
     }
   }, [fail]);
 
+  const loadPending = useCallback(async (u) => {
+    if (u.role === 'coordinator') return;
+    try {
+      setPending(u.role === 'admin'
+        ? (await api.listPendingInvoices()).length
+        : (await api.listMyLiabilities()).filter((r) => r.needs_action).length);
+    } catch {
+      /* le compteur n'est qu'une aide */
+    }
+  }, []);
+
   const loadStatic = useCallback(async (u) => {
     try {
       if (u.role === 'admin') setCoordinators(await api.listCoordinators());
@@ -106,10 +127,20 @@ export default function App() {
   useEffect(() => {
     if (!api.getToken()) return;
     api.me()
-      .then((u) => { setUser(u); loadOverview(u); loadStatic(u); })
+      .then((u) => { setUser(u); loadOverview(u); loadStatic(u); loadPending(u); })
       .catch(() => api.setToken(null))
       .finally(() => setBooting(false));
-  }, [loadOverview, loadStatic]);
+  }, [loadOverview, loadStatic, loadPending]);
+
+  // Lien reçu par email : ouvre directement le dossier de l'étudiant connecté
+  useEffect(() => {
+    if (user?.role === 'student' && deepLink.current) {
+      const id = Number(deepLink.current);
+      deepLink.current = null;
+      window.history.replaceState(null, '', window.location.pathname);
+      if (id) { setView('responsibility'); setLiabilityId(id); }
+    }
+  }, [user]);
 
   const login = async (email, password) => {
     try {
@@ -121,6 +152,7 @@ export default function App() {
       window.scrollTo(0, 0);
       loadOverview(u);
       loadStatic(u);
+      loadPending(u);
       return null;
     } catch (e) {
       return e.status === 401 ? 'Incorrect email or password.' : e.message;
@@ -130,6 +162,7 @@ export default function App() {
   const refreshAll = () => {
     setRefreshKey((k) => k + 1);
     loadOverview(user);
+    loadPending(user);
   };
 
   // Ouvre le tiroir tout de suite avec la ligne déjà connue, puis charge le détail (messages, historique)
@@ -153,8 +186,24 @@ export default function App() {
     }
   };
 
+  // Depuis une notification : la plainte complète est chargée avant d'ouvrir le tiroir
+  const openComplaintById = async (id) => {
+    try {
+      openComplaint(await api.getComplaint(role, id));
+    } catch (e) {
+      fail(e);
+    }
+  };
+
+  const openLiability = (id) => {
+    setOpen(false);
+    setView('responsibility');
+    setLiabilityId(id);
+  };
+
   const nav = (v) => {
     setView(v);
+    setLiabilityId(null);
     setLastNew(null);
     close();
     window.scrollTo(0, 0);
@@ -277,6 +326,15 @@ export default function App() {
     case 'coordinator.reports':
       content = <Reports key={`${role}.reports`} role={role} onError={fail} />;
       break;
+    case 'student.responsibility':
+      content = <Responsibility refreshKey={refreshKey} onOpen={setLiabilityId} onError={fail} />;
+      break;
+    case 'admin.invoices':
+      content = <Invoices refreshKey={refreshKey} onOpen={openComplaintById} onError={fail} />;
+      break;
+    case 'admin.emails':
+      content = <Emails key="emails" onError={fail} />;
+      break;
     case 'admin.categories':
       content = <Categories key="categories" onNotify={notify} onError={fail} />;
       break;
@@ -289,14 +347,20 @@ export default function App() {
 
   return (
     <>
-      <AppShell role={role} user={user} view={view} dark={dark} onNav={nav} onLogout={logout} onTheme={toggleTheme}>
+      <AppShell role={role} user={user} view={view} dark={dark} onNav={nav} onLogout={logout} onTheme={toggleTheme}
+        badges={{ responsibility: pending, invoices: pending }}
+        bell={<Notifications role={role} refreshKey={refreshKey} onOpenComplaint={openComplaintById} onOpenLiability={openLiability} onError={fail} />}>
         {content}
       </AppShell>
       <Drawer
         complaint={selected}
         role={role} userId={user.id} coordinators={coordinators} loading={detailLoading}
         open={open} onClose={close} onAction={act} onUpload={uploadMore} onDeleteAttachment={removeAttachment}
+        onNotify={notify} onError={fail}
       />
+      {role === 'student' && (
+        <LiabilityDrawer id={liabilityId} onClose={() => setLiabilityId(null)} onChanged={refreshAll} onNotify={notify} onError={fail} />
+      )}
       <Toast toast={toast} />
     </>
   );

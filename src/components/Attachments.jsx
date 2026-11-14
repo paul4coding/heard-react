@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import FilePicker from './FilePicker.jsx';
 import Icon from './Icon.jsx';
 import { fetchAttachmentUrl, fetchCommentPictureUrl } from '../api.js';
-import { MAX_FILES, formatSize } from '../utils.js';
+import { MAX_FILES, formatSize, isVideo } from '../utils.js';
 
 // Visionneuse plein écran. Échap ferme la visionneuse seulement, pas le tiroir.
-function Lightbox({ url, att, onClose }) {
+export function Lightbox({ url, att, onClose }) {
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') {
@@ -21,7 +21,7 @@ function Lightbox({ url, att, onClose }) {
     <div className="lightbox" role="dialog" aria-modal="true" aria-label={att.name} onClick={onClose}>
       <button className="icon-btn lb-close" aria-label="Close preview" onClick={onClose}><Icon name="x" /></button>
       <div className="lb-body" onClick={(e) => e.stopPropagation()}>
-        <img src={url} alt={att.name} />
+        {isVideo(att.type) ? <video src={url} controls autoPlay aria-label={att.name} /> : <img src={url} alt={att.name} />}
         <p>{att.name} · {formatSize(att.size)}</p>
       </div>
     </div>

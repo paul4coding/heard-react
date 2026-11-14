@@ -16,6 +16,20 @@ React + Vite single-page app for lodging and following student complaints. It ta
 - Light and dark themes, responsive layout (mobile to desktop), keyboard-accessible forms and drawer.
 - Clear error handling: validation messages, expired session, unreachable API.
 
+## Investigations (liability)
+
+* **Coordinator / administrator**: an *Investigation* panel in the complaint drawer: internal findings, designate a student
+  (search, written report, photos or short videos, two-step confirmation), see the answer, propose an invoice amount, put
+  the student out of cause, remind, close, and read the history.
+* **Administrator**: an *Invoices* page lists the invoices to validate (validate or send back) and the paid cases to close;
+  a badge shows how many are waiting. An *Emails* page shows the emails the app wrote (nothing is really sent in this version).
+* **Student**: a bell with unread notifications, an *Investigations* page (with a badge when an answer or a payment is
+  expected) and a drawer with the evidence, an answer box (required text to contest, optional defense files) and, once an
+  administrator has validated the invoice, a two-step payment (*Pay*, then *Confirm and pay*). The link in the email
+  (`/?liability=<id>`) opens the file directly.
+* After paying, a *View and print the receipt* button opens a printable receipt (also for coordinators and administrators).
+* The payment records the confirmation and a receipt only: there is no real payment gateway yet.
+
 ## Tech stack
 React 18 · Vite 5 · plain CSS (design tokens, dark mode) · `fetch` API client with JWT.
 

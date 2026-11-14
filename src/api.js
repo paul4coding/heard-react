@@ -111,6 +111,7 @@ export function toComplaint(c) {
     status: c.status,
     priority: c.priority,
     owner: userName(c.student),
+    ownerId: c.student?.id ?? null,
     assignee: userName(c.assigned_to),
     assigneeId: c.assigned_to?.id ?? null,
     date: fmtDate(c.created_at),
@@ -297,3 +298,59 @@ export async function listUsers({ q, role, active, skip = 0, limit = PAGE_SIZE }
 export const createUser = async (body) => toManagedUser(await request('/api/admin/users', { method: 'POST', json: body }));
 export const updateUser = async (id, body) => toManagedUser(await request(`/api/admin/users/${id}`, { method: 'PATCH', json: body }));
 export const getStats = () => request('/api/admin/stats');
+
+/* ---------- Enquête et responsabilité ---------- */
+export { fmtDate, fmtWhen };
+
+const prefix = (role) => PREFIX[role.toUpperCase()];
+
+// Coordinateur / administrateur : l'enquête d'une plainte (null tant qu'elle n'est pas ouverte)
+export const getInvestigation = (role, id) => request(`${prefix(role)}/complaints/${id}/investigation`);
+export const saveFindings = (role, id, findings) =>
+  request(`${prefix(role)}/complaints/${id}/investigation/findings`, { method: 'PUT', json: { findings } });
+
+export function designateStudent(role, id, { studentId, note, files = [] }) {
+  const fd = new FormData();
+  fd.append('student_id', studentId);
+  fd.append('note', note);
+  files.forEach((f) => fd.append('files', f));
+  return request(`${prefix(role)}/complaints/${id}/investigation/designate`, { method: 'POST', formData: fd });
+}
+
+const designationCall = (role, id, did, action, json) =>
+  request(`${prefix(role)}/complaints/${id}/investigation/designations/${did}/${action}`, { method: 'POST', json });
+export const setAmount = (role, id, did, amount) => designationCall(role, id, did, 'amount', { amount });
+export const validateInvoice = (role, id, did) => designationCall(role, id, did, 'invoice/validate');
+export const rejectInvoice = (role, id, did, reason) => designationCall(role, id, did, 'invoice/reject', { reason });
+export const getMyReceipt = (id) => request(`/api/student/liabilities/${id}/receipt`);
+export const getStaffReceipt = (role, id, did) => request(`${prefix(role)}/complaints/${id}/investigation/designations/${did}/receipt`);
+export const listPendingInvoices = () => request('/api/admin/investigations/pending');
+export const clearDesignation = (role, id, did, reason) => designationCall(role, id, did, 'clear', { reason });
+export const remindDesignation = (role, id, did) => designationCall(role, id, did, 'remind');
+export const closeInvestigation = (role, id, outcome, note) =>
+  request(`${prefix(role)}/complaints/${id}/investigation/close`, { method: 'POST', json: { outcome, note } });
+export const searchStudents = (role, q) => request(`${prefix(role)}/students/search?q=${encodeURIComponent(q)}`);
+
+export async function fetchInvestigationEvidenceUrl(role, id, evidenceId) {
+  return URL.createObjectURL(await fetchBlob(`${prefix(role)}/complaints/${id}/investigation/evidence/${evidenceId}`));
+}
+
+// Étudiant désigné : ses dossiers, sa réponse, le paiement
+export const listMyLiabilities = () => request('/api/student/liabilities');
+export const getMyLiability = (id) => request(`/api/student/liabilities/${id}`);
+export function respondLiability(id, { decision, text, files = [] }) {
+  const fd = new FormData();
+  fd.append('decision', decision);
+  fd.append('text', text);
+  files.forEach((f) => fd.append('files', f));
+  return request(`/api/student/liabilities/${id}/respond`, { method: 'POST', formData: fd });
+}
+export const payLiability = (id) => request(`/api/student/liabilities/${id}/pay`, { method: 'POST', json: { confirm: true } });
+export async function fetchLiabilityEvidenceUrl(id, evidenceId) {
+  return URL.createObjectURL(await fetchBlob(`/api/student/liabilities/${id}/evidence/${evidenceId}`));
+}
+
+/* ---------- Notifications et emails ---------- */
+export const listNotifications = (role) => request(`${prefix(role)}/notifications?limit=30`);
+export const markNotificationRead = (role, id) => request(`${prefix(role)}/notifications/${id}/read`, { method: 'PATCH' });
+export const listOutbox = () => request('/api/admin/outbox?limit=100');
