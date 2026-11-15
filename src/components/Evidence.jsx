@@ -34,7 +34,7 @@ function EvidenceThumb({ load, att, onView }) {
           : <img src={url} alt={att.name} />}
       </button>
       <span className="att-name" title={att.name}>{att.name}</span>
-      <span className="att-size">{formatSize(att.size)} · {att.kind === 'DEFENSE' ? 'Defense' : 'Evidence'}</span>
+      <span className="att-size">{formatSize(att.size)} · {att.kind === 'DEFENSE' ? 'Defense' : att.kind === 'PROOF' ? 'Transfer receipt' : 'Evidence'}</span>
     </div>
   );
 }

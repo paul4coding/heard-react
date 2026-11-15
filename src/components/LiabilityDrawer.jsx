@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import EvidenceGrid from './Evidence.jsx';
 import FilePicker from './FilePicker.jsx';
 import Receipt from './Receipt.jsx';
+import PayPanel, { METHOD_LABEL } from './PayPanel.jsx';
 import Icon from './Icon.jsx';
 import { Tone } from './Investigation.jsx';
 import { DESIGNATION_STATUS, EVENT_LABEL, OUTCOME } from '../data.js';
@@ -55,11 +56,11 @@ export default function LiabilityDrawer({ id, onClose, onChanged, onNotify, onEr
     }
   };
 
-  const pay = async () => {
+  const pay = async (method, files) => {
     setBusy('pay');
     setErr('');
     try {
-      setD(await api.payLiability(id));
+      setD(await api.payLiability(id, { method, files }));
       setConfirming(false);
       onNotify('Payment recorded');
       onChanged();
@@ -146,25 +147,20 @@ export default function LiabilityDrawer({ id, onClose, onChanged, onNotify, onEr
             <p className="amount">{d.amount}</p>
             {d.paid_at ? (
               <>
-                <div className="review-done ok"><Icon name="check" /><span><b>Paid</b>Receipt {d.receipt} · {api.fmtWhen(d.paid_at)}</span></div>
+                <div className="review-done ok"><Icon name="check" /><span><b>Paid{d.payment_method ? ` by ${METHOD_LABEL[d.payment_method]}` : ''}</b>Receipt {d.receipt} · {api.fmtWhen(d.paid_at)}</span></div>
+                {d.evidence.some((e) => e.kind === 'PROOF') && <EvidenceGrid items={d.evidence.filter((e) => e.kind === 'PROOF')} load={load} />}
                 <button className="btn block" style={{ marginTop: 12 }} onClick={() => setShowReceipt(true)}>View and print the receipt</button>
                 {d.case_state === 'PAID' && <p className="hint" style={{ marginTop: 12 }}>The administration will now close the case.</p>}
               </>
             ) : d.can_pay ? (
               <>
-                <p className="hint">This invoice was checked and validated by the administration. Review the amount, then confirm to pay.</p>
+                <p className="hint">This invoice was checked and validated by the administration. Review the amount, then choose how to pay.</p>
                 {err && !d.can_respond && <p className="error" role="alert">{err}</p>}
                 {!confirming ? (
                   <button className="btn primary block" disabled={!!busy} onClick={() => setConfirming(true)}>Pay {d.amount}</button>
                 ) : (
-                  <div className="confirm-pay">
-                    <p><b>Confirm your payment</b></p>
-                    <p>You are about to pay <b>{d.amount}</b> for invoice <b>{d.invoice_number}</b> ({d.complaint_reference}). This cannot be undone.</p>
-                    <div className="review-btns">
-                      <button className="btn primary" disabled={!!busy} onClick={pay}>{busy === 'pay' ? 'Paying…' : 'Confirm and pay'}</button>
-                      <button className="btn" disabled={!!busy} onClick={() => setConfirming(false)}>Cancel</button>
-                    </div>
-                  </div>
+                  <PayPanel amount={d.amount} invoice={d.invoice_number} reference={d.complaint_reference} busy={busy === 'pay'} err={err}
+                    onPay={pay} onCancel={() => setConfirming(false)} />
                 )}
               </>
             ) : <p className="hint">This invoice is no longer due.</p>}

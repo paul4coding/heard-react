@@ -511,3 +511,22 @@ html{scroll-behavior:smooth}
   .receipt-sheet{position:absolute;left:0;top:0;width:100%;box-shadow:none;border-radius:0}
   .receipt-actions{display:none}
 }
+
+.pay-panel{border:1px solid var(--brand);border-radius:12px;padding:14px;background:var(--brand-soft)}
+.pay-panel p{margin:0 0 10px;color:var(--ink)}
+.pay-methods{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.pay-method{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;background:#fff;border:2px solid var(--line);border-radius:12px;font:600 14px inherit;color:var(--ink);cursor:pointer;transition:border-color .15s,transform .15s,box-shadow .15s}
+.pay-method:hover,.pay-method:focus-visible{border-color:var(--brand);transform:translateY(-2px);box-shadow:0 6px 18px rgba(51,64,245,.18);outline:0}
+.pay-method svg{width:46px;height:46px}
+.qr-box{position:relative;width:210px;margin:6px auto 12px;padding:10px;background:#fff;border:1px solid var(--line);border-radius:12px}
+.fake-qr{display:block;width:100%;height:auto}
+.qr-box.scanning .fake-qr{opacity:.35;transition:opacity .3s}
+.qr-scan{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-weight:700;color:var(--brand);overflow:hidden}
+.qr-scan span{background:#fff;border-radius:8px;padding:6px 10px;box-shadow:0 4px 14px rgba(18,21,43,.18);position:relative}
+.qr-scan i{position:absolute;left:0;right:0;height:3px;background:var(--brand);box-shadow:0 0 14px var(--brand);animation:qrline 1.1s ease-in-out infinite alternate}
+@keyframes qrline{from{top:6%}to{top:94%}}
+.bank-box{margin:0 0 12px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:4px 12px}
+.bank-box div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line)}
+.bank-box div:first-child{border-top:0}
+.bank-box dt{color:var(--ink-3)}
+.bank-box dd{margin:0;font-weight:600;text-align:right}

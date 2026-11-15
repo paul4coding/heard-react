@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Icon from './Icon.jsx';
 import Logo from './Logo.jsx';
+import { METHOD_LABEL } from './PayPanel.jsx';
 import * as api from '../api.js';
 
 // Reçu d'une facture payée. `load` renvoie les données ; le bouton ouvre l'impression (ou « enregistrer en PDF »).
@@ -32,6 +33,7 @@ export default function Receipt({ load, onClose, onError }) {
     ...(r.category ? [['Category', r.category]] : []),
     ['Invoice validated', r.validated_at ? `${api.fmtWhen(r.validated_at)}${r.validated_by ? ` by ${r.validated_by}` : ''}` : '—'],
     ['Payment date', api.fmtWhen(r.paid_at)],
+    ...(r.payment_method ? [['Payment method', METHOD_LABEL[r.payment_method] || r.payment_method]] : []),
   ];
 
   return (

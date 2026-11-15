@@ -345,7 +345,13 @@ export function respondLiability(id, { decision, text, files = [] }) {
   files.forEach((f) => fd.append('files', f));
   return request(`/api/student/liabilities/${id}/respond`, { method: 'POST', formData: fd });
 }
-export const payLiability = (id) => request(`/api/student/liabilities/${id}/pay`, { method: 'POST', json: { confirm: true } });
+export function payLiability(id, { method, files = [] }) {
+  const fd = new FormData();
+  fd.append('confirm', 'true');
+  fd.append('method', method);
+  files.forEach((f) => fd.append('files', f));
+  return request(`/api/student/liabilities/${id}/pay`, { method: 'POST', formData: fd });
+}
 export async function fetchLiabilityEvidenceUrl(id, evidenceId) {
   return URL.createObjectURL(await fetchBlob(`/api/student/liabilities/${id}/evidence/${evidenceId}`));
 }

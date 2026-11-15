@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import EvidenceGrid from './Evidence.jsx';
 import FilePicker from './FilePicker.jsx';
 import Receipt from './Receipt.jsx';
+import { METHOD_LABEL } from './PayPanel.jsx';
 import Icon from './Icon.jsx';
 import { CASE_STATE, DESIGNATION_STATUS, EVENT_LABEL, OUTCOME } from '../data.js';
 import * as api from '../api.js';
@@ -143,7 +144,10 @@ function DesignationCard({ d, data, role, c, busy, run, onError }) {
       {d.amount != null && (
         <p className="sub"><b>Amount: {d.amount}</b>
           {d.invoice_number ? ` · invoice ${d.invoice_number} validated by ${fullName(d.validated_by)}` : ' · invoice not validated yet'}
-          {d.paid_at ? ` · paid ${api.fmtWhen(d.paid_at)} · receipt ${d.receipt}` : d.invoice_number ? ' · waiting for the student to pay' : ''}</p>
+          {d.paid_at ? ` · paid${d.payment_method ? ` by ${METHOD_LABEL[d.payment_method]}` : ''} ${api.fmtWhen(d.paid_at)} · receipt ${d.receipt}` : d.invoice_number ? ' · waiting for the student to pay' : ''}</p>
+      )}
+      {d.evidence.some((e) => e.kind === 'PROOF') && (
+        <div className="dsec"><h3>Bank transfer receipt</h3><EvidenceGrid items={d.evidence.filter((e) => e.kind === 'PROOF')} load={load} /></div>
       )}
       {d.paid_at && <button className="btn" onClick={() => setReceipt(true)}>View and print the receipt</button>}
       {receipt && <Receipt load={() => api.getStaffReceipt(role, c.id, d.id)} onClose={() => setReceipt(false)} onError={onError} />}
