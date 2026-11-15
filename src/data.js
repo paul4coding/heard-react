@@ -7,9 +7,9 @@ export const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 // de la catégorie. La catégorie est donc affichée partout.
 export const SHOW_CATEGORIES = true;
 
-// Les niveaux de priorité sont la story 13 du plan (Sprint 4, Release 3) : ni dans les formulaires ni dans les listes avant.
-// Au Sprint 4 : passer à true (colonne, détail, champ du formulaire de l'administrateur).
-export const SHOW_PRIORITY = false;
+// Story 13 : niveau de sévérité (badge). L'administrateur le règle d'un clic dans la liste ; le coordinateur le voit,
+// et ses plaintes ouvertes les plus urgentes arrivent en tête.
+export const SHOW_PRIORITY = true;
 
 // Rôles de l'interface (le backend envoie STUDENT / COORDINATOR / ADMIN)
 export const ROLE_LABEL = { student: 'Student', coordinator: 'Coordinator', admin: 'Administrator' };

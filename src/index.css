@@ -354,11 +354,15 @@ html{scroll-behavior:smooth}
 .brand-panel .logo-img{width:46px;height:46px}
 
 /* Priority */
-.prio{font-weight:600;font-size:12.5px}
-.prio.low{color:var(--ink-3)}
-.prio.medium{color:var(--info)}
-.prio.high{color:var(--warn)}
-.prio.urgent{color:var(--bad)}
+.prio{display:inline-block;border-radius:999px;padding:3px 11px;font-weight:700;font-size:12px;background:var(--surface-2);line-height:1.4}
+.prio.none{background:transparent;color:var(--ink-3);font-weight:500;padding-left:0}
+.prio.low{background:#EEF0F6;color:var(--ink-2)}
+.prio.medium{background:var(--info-soft);color:var(--info)}
+.prio.high{background:var(--warn-soft);color:var(--warn)}
+.prio.urgent{background:var(--bad-soft);color:var(--bad)}
+select.prio-select{appearance:none;-webkit-appearance:none;border:0;cursor:pointer;padding-right:11px;font-family:inherit;text-align:center}
+select.prio-select:hover,select.prio-select:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+select.prio-select.none{background:var(--brand-soft);color:var(--brand);padding-left:11px;font-weight:700}
 .btn:disabled{opacity:.55;cursor:not-allowed}
 
 /* Pagination */

@@ -342,7 +342,7 @@ export default function App() {
       content = <UsersView key="users" me={user} onNotify={notify} onError={fail} />;
       break;
     default:
-      content = <ComplaintList key={`${role}.${view}`} role={role} refreshKey={refreshKey} onOpen={openComplaint} onError={fail} />;
+      content = <ComplaintList key={`${role}.${view}`} role={role} refreshKey={refreshKey} onOpen={openComplaint} onNotify={notify} onError={fail} />;
   }
 
   return (

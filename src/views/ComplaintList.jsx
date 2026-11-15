@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import Icon from '../components/Icon.jsx';
 import Pager from '../components/Pager.jsx';
 import { Pill, Mini } from '../components/Status.jsx';
-import { STAGES, STATUSES, SHOW_PRIORITY } from '../data.js';
-import { listComplaints, PAGE_SIZE } from '../api.js';
+import { STAGES, STATUSES, SHOW_PRIORITY, PRIORITIES } from '../data.js';
+import { listComplaints, setPriority, PAGE_SIZE } from '../api.js';
 
 const HEADS = {
   student: ['Complaint', 'Category', 'Progress', 'Submitted'],
@@ -14,11 +14,37 @@ const HEADS = {
 // Priorité : masquée jusqu'au sprint 4 (voir SHOW_PRIORITY)
 const headsFor = (role, showCat) => HEADS[role].filter((h) => (showCat || h !== 'Category') && (SHOW_PRIORITY || h !== 'Priority'));
 
+const label = (p) => p.charAt(0) + p.slice(1).toLowerCase();
+
 export const Priority = ({ value }) =>
-  value ? <span className={`prio ${value.toLowerCase()}`}>{value.charAt(0) + value.slice(1).toLowerCase()}</span> : <span style={{ color: 'var(--ink-3)' }}>None</span>;
+  value ? <span className={`prio ${value.toLowerCase()}`}>{label(value)}</span> : <span className="prio none">None</span>;
+
+// Badge de sévérité modifiable d'un clic (administrateur) : le choix est enregistré tout de suite.
+function PrioSelect({ c, onSaved, onError }) {
+  const [busy, setBusy] = useState(false);
+  const change = async (e) => {
+    const next = e.target.value;
+    if (!next || next === c.priority) return;
+    setBusy(true);
+    try {
+      onSaved(await setPriority(c.id, next));
+    } catch (err) {
+      onError(err);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <select className={`prio prio-select ${c.priority ? c.priority.toLowerCase() : 'none'}`} value={c.priority ?? ''} disabled={busy}
+      aria-label={`Priority of ${c.ref}`} onChange={change} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+      {!c.priority && <option value="">Set…</option>}
+      {PRIORITIES.map((p) => <option key={p} value={p}>{label(p)}</option>)}
+    </select>
+  );
+}
 
 // Liste paginée côté serveur : seule la page affichée est chargée.
-export default function ComplaintList({ role, refreshKey, onOpen, onError }) {
+export default function ComplaintList({ role, refreshKey, onOpen, onNotify, onError }) {
   const [filter, setFilter] = useState('all');
   const [input, setInput] = useState('');
   const [query, setQuery] = useState('');
@@ -85,7 +111,13 @@ export default function ComplaintList({ role, refreshKey, onOpen, onError }) {
       )}
       {role !== 'student' && <td className="muted">{c.owner}</td>}
       {role !== 'student' && <td><Pill stage={c.stage} /></td>}
-      {SHOW_PRIORITY && role !== 'student' && <td><Priority value={c.priority} /></td>}
+      {SHOW_PRIORITY && role !== 'student' && (
+        <td>
+          {role === 'admin'
+            ? <PrioSelect c={c} onError={onError} onSaved={(n) => { setRows((rs) => rs.map((r) => (r.id === n.id ? { ...r, priority: n.priority } : r))); onNotify?.(`Priority of ${n.ref} set to ${label(n.priority)}`); }} />
+            : <Priority value={c.priority} />}
+        </td>
+      )}
       {role === 'admin' && (
         <td className="muted">
           {c.assignee ? c.assignee : <span style={{ color: 'var(--bad)', fontWeight: 600 }}>{c.rejected ? 'Rejected' : 'Unassigned'}</span>}
