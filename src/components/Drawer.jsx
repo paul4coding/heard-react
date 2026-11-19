@@ -316,7 +316,7 @@ export default function Drawer({ complaint: c, role, userId, coordinators, open,
         <div className="dsec"><h3>Description</h3><p>{c.desc}</p></div>
         <Attachments key={`${c.id}-${c.attachments.length}`} complaint={c} role={role} userId={userId}
           onUpload={onUpload} onDelete={onDeleteAttachment} />
-        {!isStudent && c.stage >= 1 && <Investigation key={`inv-${c.id}`} role={role} complaint={c} onNotify={onNotify} onError={onError} />}
+        {!isStudent && c.stage >= 2 && <Investigation key={`inv-${c.id}`} role={role} complaint={c} onNotify={onNotify} onError={onError} />}
         {action}
         <div className="dsec">
           <h3>Updates</h3>
